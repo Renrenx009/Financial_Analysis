@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
+git add requirements.txt
+git commit -m "Add matplotlib to requirements"
+git push
 
 def get_cpf_allocation_rates(age):
     if age <= 35:
