@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
 def get_cpf_allocation_rates(age):
     if age <= 35:
         return 0.6217, 0.1621, 0.2162
@@ -21,7 +20,6 @@ def get_cpf_allocation_rates(age):
     else:
         return 0.08, 0.08, 0.84
 
-
 def get_cpf_rates(age):
     if age <= 55:
         return 0.17, 0.20, 0.37
@@ -34,12 +32,10 @@ def get_cpf_rates(age):
     else:
         return 0.075, 0.05, 0.125
 
-
 def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, start_age, current_age,
                           annual_investment_premium, annual_interest_rate):
     cpf_balance = {'Year': [], 'Age': [], 'Cumulative Cash Savings': [], 'Cumulative OA': [], 'Cumulative SA': [],
-                   'Cumulative MA': [],
-                   'Cumulative Investment Premium': [], 'Investment Value': []}
+                   'Cumulative MA': [], 'Cumulative Total CPF': [], 'Cumulative Investment Premium': [], 'Investment Value': []}
 
     years_worked = current_age - start_age
     cumulative_cash_savings = cumulative_oa = cumulative_sa = cumulative_ma = cumulative_investment_premium = investment_value = 0
@@ -53,8 +49,7 @@ def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, sta
         cpf_contribution = annual_income * total_rate
 
         net_monthly_salary = (salary * (1 - employee_rate)) - monthly_expenses
-        net_annual_salary = (net_monthly_salary * 12) + (bonus * (1 - employee_rate)) + (
-                    thirteenth_month * (1 - employee_rate))
+        net_annual_salary = (net_monthly_salary * 12) + (bonus * (1 - employee_rate)) + (thirteenth_month * (1 - employee_rate))
 
         cumulative_cash_savings += net_annual_salary - annual_investment_premium
         cumulative_oa += cpf_contribution * oa_rate
@@ -64,17 +59,19 @@ def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, sta
         cumulative_investment_premium += annual_investment_premium
         investment_value = (investment_value + annual_investment_premium) * (1 + annual_interest_rate / 100)
 
+        cumulative_total_cpf = cumulative_oa + cumulative_sa + cumulative_ma
+
         cpf_balance['Year'].append(year + 1)
         cpf_balance['Age'].append(age)
         cpf_balance['Cumulative Cash Savings'].append(round(cumulative_cash_savings, 2))
         cpf_balance['Cumulative OA'].append(round(cumulative_oa, 2))
         cpf_balance['Cumulative SA'].append(round(cumulative_sa, 2))
         cpf_balance['Cumulative MA'].append(round(cumulative_ma, 2))
+        cpf_balance['Cumulative Total CPF'].append(round(cumulative_total_cpf, 2))
         cpf_balance['Cumulative Investment Premium'].append(round(cumulative_investment_premium, 2))
         cpf_balance['Investment Value'].append(round(investment_value, 2))
 
     return cpf_balance
-
 
 st.header("Financial Analysis")
 st.subheader("Key in your information here")
@@ -98,10 +95,8 @@ else:
     monthly_expenses_1 = st.number_input("Enter Person 1's monthly expenses:", min_value=0.0, step=100.0)
     start_age_1 = st.number_input("Enter Person 1's starting age:", min_value=0, step=1)
     current_age_1 = st.number_input("Enter Person 1's current age:", min_value=0, step=1)
-    annual_investment_premium_1 = st.number_input("Enter Person 1's annual investment premium:", min_value=0.0,
-                                                  step=100.0)
-    annual_interest_rate_1 = st.number_input("Enter Person 1's annual interest rate (as a percentage):", min_value=0.0,
-                                             step=0.1)
+    annual_investment_premium_1 = st.number_input("Enter Person 1's annual investment premium:", min_value=0.0, step=100.0)
+    annual_interest_rate_1 = st.number_input("Enter Person 1's annual interest rate (as a percentage):", min_value=0.0, step=0.1)
 
     st.subheader("Person 2")
     salary_2 = st.number_input("Enter Person 2's monthly gross income:", min_value=0.0, step=100.0)
@@ -110,10 +105,8 @@ else:
     monthly_expenses_2 = st.number_input("Enter Person 2's monthly expenses:", min_value=0.0, step=100.0)
     start_age_2 = st.number_input("Enter Person 2's starting age:", min_value=0, step=1)
     current_age_2 = st.number_input("Enter Person 2's current age:", min_value=0, step=1)
-    annual_investment_premium_2 = st.number_input("Enter Person 2's annual investment premium:", min_value=0.0,
-                                                  step=100.0)
-    annual_interest_rate_2 = st.number_input("Enter Person 2's annual interest rate (as a percentage):", min_value=0.0,
-                                             step=0.1)
+    annual_investment_premium_2 = st.number_input("Enter Person 2's annual investment premium:", min_value=0.0, step=100.0)
+    annual_interest_rate_2 = st.number_input("Enter Person 2's annual interest rate (as a percentage):", min_value=0.0, step=0.1)
 
 if st.button("Calculate"):
     if analysis_type == 'Single':
@@ -123,11 +116,9 @@ if st.button("Calculate"):
                                             annual_interest_rate)
 
         df = pd.DataFrame(cpf_balance)
-        st.write(df)
 
         total_years_worked = current_age - start_age
-        total_cpf_contribution = df['Cumulative OA'].iloc[-1] + df['Cumulative SA'].iloc[-1] + df['Cumulative MA'].iloc[
-            -1]
+        total_cpf_contribution = df['Cumulative OA'].iloc[-1] + df['Cumulative SA'].iloc[-1] + df['Cumulative MA'].iloc[-1]
         total_employee_contribution = total_cpf_contribution * (
                     df['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df['Age'].apply(get_cpf_rates).apply(
                 lambda x: x[2]).mean())
@@ -154,10 +145,24 @@ if st.button("Calculate"):
         st.write(f"Total Investment Premium Paid: ${total_investment_premium_paid:.2f}")
         st.write(f"Total Investment Value: ${investment_value:.2f}")
 
+        # Format the DataFrame to show dollar signs and two decimal places
+        df = df.style.format({
+            'Cumulative Cash Savings': '${:,.2f}',
+            'Cumulative OA': '${:,.2f}',
+            'Cumulative SA': '${:,.2f}',
+            'Cumulative MA': '${:,.2f}',
+            'Cumulative Total CPF': '${:,.2f}',
+            'Cumulative Investment Premium': '${:,.2f}',
+            'Investment Value': '${:,.2f}'
+        })
+
+        st.write(df)
+
         # Plotting the investment value and cumulative investment premium
         fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(df['Year'], df['Investment Value'], marker='o', linestyle='-', color='b', label='Investment Value')
-        ax.plot(df['Year'], df['Cumulative Investment Premium'], marker='o', linestyle='-', color='r',
+        ax.plot(df.data['Year'], df.data['Investment Value'], marker='o', linestyle='-', color='b',
+                label='Investment Value')
+        ax.plot(df.data['Year'], df.data['Cumulative Investment Premium'], marker='o', linestyle='-', color='r',
                 label='Cumulative Investment Premium')
         ax.set_xlabel('Year')
         ax.set_ylabel('Amount ($)')
@@ -179,15 +184,12 @@ if st.button("Calculate"):
         df_1 = pd.DataFrame(cpf_balance_1)
         df_2 = pd.DataFrame(cpf_balance_2)
 
-        st.subheader("Person 1's Financial Analysis")
-        st.write(df_1)
-
         total_years_worked_1 = current_age_1 - start_age_1
         total_cpf_contribution_1 = df_1['Cumulative OA'].iloc[-1] + df_1['Cumulative SA'].iloc[-1] + \
                                    df_1['Cumulative MA'].iloc[-1]
         total_employee_contribution_1 = total_cpf_contribution_1 * (
-                    df_1['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df_1['Age'].apply(
-                get_cpf_rates).apply(lambda x: x[2]).mean())
+                df_1['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df_1['Age'].apply(get_cpf_rates).apply(
+            lambda x: x[2]).mean())
         total_oa_1 = df_1['Cumulative OA'].iloc[-1]
         total_sa_1 = df_1['Cumulative SA'].iloc[-1]
         total_ma_1 = df_1['Cumulative MA'].iloc[-1]
@@ -198,6 +200,7 @@ if st.button("Calculate"):
         total_investment_premium_paid_1 = df_1['Cumulative Investment Premium'].iloc[-1]
         investment_value_1 = df_1['Investment Value'].iloc[-1]
 
+        st.subheader("Person 1's Financial Analysis")
         st.write("\nIn-Depth Analysis for Person 1:")
         st.write(f"Total years worked: {total_years_worked_1}")
         st.write(f"Total CPF contribution: ${total_cpf_contribution_1:.2f}")
@@ -211,10 +214,24 @@ if st.button("Calculate"):
         st.write(f"Total Investment Premium Paid: ${total_investment_premium_paid_1:.2f}")
         st.write(f"Total Investment Value: ${investment_value_1:.2f}")
 
+        # Format the DataFrame to show dollar signs and two decimal places
+        df_1 = df_1.style.format({
+            'Cumulative Cash Savings': '${:,.2f}',
+            'Cumulative OA': '${:,.2f}',
+            'Cumulative SA': '${:,.2f}',
+            'Cumulative MA': '${:,.2f}',
+            'Cumulative Total CPF': '${:,.2f}',
+            'Cumulative Investment Premium': '${:,.2f}',
+            'Investment Value': '${:,.2f}'
+        })
+
+        st.write(df_1)
+
         # Plotting the investment value and cumulative investment premium for Person 1
         fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(df_1['Year'], df_1['Investment Value'], marker='o', linestyle='-', color='b', label='Investment Value')
-        ax.plot(df_1['Year'], df_1['Cumulative Investment Premium'], marker='o', linestyle='-', color='r',
+        ax.plot(df_1.data['Year'], df_1.data['Investment Value'], marker='o', linestyle='-', color='b',
+                label='Investment Value')
+        ax.plot(df_1.data['Year'], df_1.data['Cumulative Investment Premium'], marker='o', linestyle='-', color='r',
                 label='Cumulative Investment Premium')
         ax.set_xlabel('Year')
         ax.set_ylabel('Amount ($)')
@@ -223,15 +240,12 @@ if st.button("Calculate"):
         ax.grid(True)
         st.pyplot(fig)
 
-        st.subheader("Person 2's Financial Analysis")
-        st.write(df_2)
-
         total_years_worked_2 = current_age_2 - start_age_2
         total_cpf_contribution_2 = df_2['Cumulative OA'].iloc[-1] + df_2['Cumulative SA'].iloc[-1] + \
                                    df_2['Cumulative MA'].iloc[-1]
         total_employee_contribution_2 = total_cpf_contribution_2 * (
-                    df_2['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df_2['Age'].apply(
-                get_cpf_rates).apply(lambda x: x[2]).mean())
+                df_2['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df_2['Age'].apply(get_cpf_rates).apply(
+            lambda x: x[2]).mean())
         total_oa_2 = df_2['Cumulative OA'].iloc[-1]
         total_sa_2 = df_2['Cumulative SA'].iloc[-1]
         total_ma_2 = df_2['Cumulative MA'].iloc[-1]
@@ -242,6 +256,7 @@ if st.button("Calculate"):
         total_investment_premium_paid_2 = df_2['Cumulative Investment Premium'].iloc[-1]
         investment_value_2 = df_2['Investment Value'].iloc[-1]
 
+        st.subheader("Person 2's Financial Analysis")
         st.write("\nIn-Depth Analysis for Person 2:")
         st.write(f"Total years worked: {total_years_worked_2}")
         st.write(f"Total CPF contribution: ${total_cpf_contribution_2:.2f}")
@@ -255,14 +270,96 @@ if st.button("Calculate"):
         st.write(f"Total Investment Premium Paid: ${total_investment_premium_paid_2:.2f}")
         st.write(f"Total Investment Value: ${investment_value_2:.2f}")
 
+        # Format the DataFrame to show dollar signs and two decimal places
+        df_2 = df_2.style.format({
+            'Cumulative Cash Savings': '${:,.2f}',
+            'Cumulative OA': '${:,.2f}',
+            'Cumulative SA': '${:,.2f}',
+            'Cumulative MA': '${:,.2f}',
+            'Cumulative Total CPF': '${:,.2f}',
+            'Cumulative Investment Premium': '${:,.2f}',
+            'Investment Value': '${:,.2f}'
+        })
+
+        st.write(df_2)
+
         # Plotting the investment value and cumulative investment premium for Person 2
         fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(df_2['Year'], df_2['Investment Value'], marker='o', linestyle='-', color='b', label='Investment Value')
-        ax.plot(df_2['Year'], df_2['Cumulative Investment Premium'], marker='o', linestyle='-', color='r',
+        ax.plot(df_2.data['Year'], df_2.data['Investment Value'], marker='o', linestyle='-', color='b',
+                label='Investment Value')
+        ax.plot(df_2.data['Year'], df_2.data['Cumulative Investment Premium'], marker='o', linestyle='-', color='r',
                 label='Cumulative Investment Premium')
         ax.set_xlabel('Year')
         ax.set_ylabel('Amount ($)')
         ax.set_title('Investment Value and Cumulative Investment Premium Over Time for Person 2')
+        ax.legend()
+        ax.grid(True)
+        st.pyplot(fig)
+
+        # Combine the data for both persons
+        combined_balance = {
+            'Year': df_1.data['Year'],
+            'Cumulative Cash Savings': df_1.data['Cumulative Cash Savings'] + df_2.data['Cumulative Cash Savings'],
+            'Cumulative OA': df_1.data['Cumulative OA'] + df_2.data['Cumulative OA'],
+            'Cumulative SA': df_1.data['Cumulative SA'] + df_2.data['Cumulative SA'],
+            'Cumulative MA': df_1.data['Cumulative MA'] + df_2.data['Cumulative MA'],
+            'Cumulative Total CPF': df_1.data['Cumulative Total CPF'] + df_2.data['Cumulative Total CPF'],
+            'Cumulative Investment Premium': df_1.data['Cumulative Investment Premium'] + df_2.data[
+                'Cumulative Investment Premium'],
+            'Investment Value': df_1.data['Investment Value'] + df_2.data['Investment Value']
+        }
+
+        df_combined = pd.DataFrame(combined_balance)
+
+        # Format the combined DataFrame to show dollar signs and two decimal places
+        df_combined = df_combined.style.format({
+            'Cumulative Cash Savings': '${:,.2f}',
+            'Cumulative OA': '${:,.2f}',
+            'Cumulative SA': '${:,.2f}',
+            'Cumulative MA': '${:,.2f}',
+            'Cumulative Total CPF': '${:,.2f}',
+            'Cumulative Investment Premium': '${:,.2f}',
+            'Investment Value': '${:,.2f}'
+        })
+
+        st.subheader("Combined Financial Analysis")
+        st.write(df_combined)
+
+        total_years_worked_combined = max(total_years_worked_1, total_years_worked_2)
+        total_cpf_contribution_combined = total_cpf_contribution_1 + total_cpf_contribution_2
+        total_employee_contribution_combined = total_employee_contribution_1 + total_employee_contribution_2
+        total_oa_combined = total_oa_1 + total_oa_2
+        total_sa_combined = total_sa_1 + total_sa_2
+        total_ma_combined = total_ma_1 + total_ma_2
+        cumulative_cash_savings_combined = cumulative_cash_savings_1 + cumulative_cash_savings_2
+        net_monthly_salary_combined = net_monthly_salary_1 + net_monthly_salary_2
+        net_annual_salary_combined = net_annual_salary_1 + net_annual_salary_2
+        total_investment_premium_paid_combined = total_investment_premium_paid_1 + total_investment_premium_paid_2
+        investment_value_combined = investment_value_1 + investment_value_2
+
+        st.write("\nCombined In-Depth Analysis:")
+        st.write(f"Total years worked: {total_years_worked_combined}")
+        st.write(f"Total CPF contribution: ${total_cpf_contribution_combined:.2f}")
+        st.write(f"Total Employee CPF contribution: ${total_employee_contribution_combined:.2f}")
+        st.write(f"Total OA (Ordinary Account) balance: ${total_oa_combined:.2f}")
+        st.write(f"Total SA (Special Account) balance: ${total_sa_combined:.2f}")
+        st.write(f"Total MA (MediSave Account) balance: ${total_ma_combined:.2f}")
+        st.write(f"Cumulative Cash Savings: ${cumulative_cash_savings_combined:.2f}")
+        st.write(f"Net Monthly Salary: ${net_monthly_salary_combined:.2f}")
+        st.write(f"Net Annual Salary: ${net_annual_salary_combined:.2f}")
+        st.write(f"Total Investment Premium Paid: ${total_investment_premium_paid_combined:.2f}")
+        st.write(f"Total Investment Value: ${investment_value_combined:.2f}")
+
+        # Plotting the combined investment value and cumulative investment premium
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(df_combined.data['Year'], df_combined.data['Investment Value'], marker='o', linestyle='-', color='b',
+                label='Investment Value')
+        ax.plot(df_combined.data['Year'], df_combined.data['Cumulative Investment Premium'], marker='o', linestyle='-',
+                color='r',
+                label='Cumulative Investment Premium')
+        ax.set_xlabel('Year')
+        ax.set_ylabel('Amount ($)')
+        ax.set_title('Combined Investment Value and Cumulative Investment Premium Over Time')
         ax.legend()
         ax.grid(True)
         st.pyplot(fig)
