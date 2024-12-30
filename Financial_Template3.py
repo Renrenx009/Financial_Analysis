@@ -265,6 +265,10 @@ else:
                                  step=100.0)
         milestones[age] = amount
 
+    # Adjust milestones for Person 2 based on the age difference
+    age_difference = start_age_1 - start_age_2
+    milestones_2 = {age - age_difference: amount for age, amount in milestones.items()}
+
     if st.button("Calculate"):
         cpf_balance_1 = calculate_cpf_balance(salary_1, bonus_1, thirteenth_month_1, monthly_expenses_1,
                                               start_age_1, current_age_1,
@@ -275,7 +279,7 @@ else:
                                               start_age_2, current_age_2,
                                               annual_investment_premium_2,
                                               annual_interest_rate_2,
-                                              milestones, milestone_percentage=0.5)
+                                              milestones_2, milestone_percentage=0.5)
 
         # Create separate dataframes for each person
         df_1 = pd.DataFrame(cpf_balance_1)
