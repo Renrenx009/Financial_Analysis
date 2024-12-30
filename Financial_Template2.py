@@ -33,12 +33,14 @@ def get_cpf_rates(age):
         return 0.075, 0.05, 0.125
 
 def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, start_age, current_age,
-                          annual_investment_premium, annual_interest_rate, milestones):
+                          annual_investment_premium, annual_interest_rate, milestones, milestone_percentage=1.0):
     cpf_balance = {'Year': [], 'Age': [], 'Cumulative Cash Savings': [], 'Cumulative OA': [], 'Cumulative SA': [],
-                   'Cumulative MA': [], 'Cumulative Total CPF': [], 'Cumulative Investment Premium': [], 'Investment Value': [], 'Net Worth': []}
+                   'Cumulative MA': [], 'Cumulative Total CPF': [], 'Cumulative Investment Premium': [],
+                   'Investment Value': [], 'Net Worth': []}
 
     years_worked = current_age - start_age
     cumulative_cash_savings = cumulative_oa = cumulative_sa = cumulative_ma = cumulative_investment_premium = investment_value = 0
+    net_worth = 0
 
     for year in range(years_worked):
         age = start_age + year
@@ -49,7 +51,8 @@ def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, sta
         cpf_contribution = annual_income * total_rate
 
         net_monthly_salary = (salary * (1 - employee_rate)) - monthly_expenses
-        net_annual_salary = (net_monthly_salary * 12) + (bonus * (1 - employee_rate)) + (thirteenth_month * (1 - employee_rate))
+        net_annual_salary = (net_monthly_salary * 12) + (bonus * (1 - employee_rate)) + (
+                    thirteenth_month * (1 - employee_rate))
 
         cumulative_cash_savings += net_annual_salary - annual_investment_premium
         cumulative_oa += cpf_contribution * oa_rate
@@ -64,10 +67,11 @@ def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, sta
 
         # Apply financial milestones
         if age in milestones:
-            net_worth += milestones[age]
+            net_worth += milestones[age] * milestone_percentage
+            cumulative_cash_savings += milestones[age] * milestone_percentage  # Ensure the effect is permanent
 
         cpf_balance['Year'].append(year + 1)
-        cpf_balance['Age'].append(age)
+        cpf_balance['Age'].append(age)  # Use the current age without incrementing
         cpf_balance['Cumulative Cash Savings'].append(round(cumulative_cash_savings, 2))
         cpf_balance['Cumulative OA'].append(round(cumulative_oa, 2))
         cpf_balance['Cumulative SA'].append(round(cumulative_sa, 2))
@@ -87,7 +91,6 @@ def align_financial_data(df1, df2, start_age_1, start_age_2):
     # Create a new DataFrame to hold the combined data
     combined_data = {
         'Year': list(range(1, max_age - min_age + 2)),
-        'Age': list(range(min_age, max_age + 1)),
         'Cumulative Cash Savings': [],
         'Cumulative OA': [],
         'Cumulative SA': [],
@@ -108,7 +111,8 @@ def align_financial_data(df1, df2, start_age_1, start_age_2):
     investment_value_1 = investment_value_2 = 0
     net_worth_1 = net_worth_2 = 0
 
-    for age in combined_data['Age']:
+    for year in combined_data['Year']:
+        age = min_age + year - 1
         if age in df1['Age'].values:
             idx = df1['Age'].values.tolist().index(age)
             cumulative_cash_savings_1 = df1['Cumulative Cash Savings'].iloc[idx]
@@ -166,42 +170,7 @@ if analysis_type == 'Single':
                                  step=100.0)
         milestones[age] = amount
 
-else:
-    st.subheader("Person 1")
-    salary_1 = st.number_input("Enter Person 1's monthly gross income:", min_value=0.0, step=100.0)
-    bonus_1 = st.number_input("Enter Person 1's annual bonus:", min_value=0.0, step=100.0)
-    thirteenth_month_1 = st.number_input("Enter Person 1's 13th month salary:", min_value=0.0, step=100.0)
-    monthly_expenses_1 = st.number_input("Enter Person 1's monthly expenses:", min_value=0.0, step=100.0)
-    start_age_1 = st.number_input("Enter Person 1's starting age:", min_value=0, step=1)
-    current_age_1 = st.number_input("Enter Person 1's current age:", min_value=0, step=1)
-    annual_investment_premium_1 = st.number_input("Enter Person 1's annual investment premium:", min_value=0.0,
-                                                  step=100.0)
-    annual_interest_rate_1 = st.number_input("Enter Person 1's annual interest rate (as a percentage):", min_value=0.0,
-                                             step=0.1)
-
-    st.subheader("Person 2")
-    salary_2 = st.number_input("Enter Person 2's monthly gross income:", min_value=0.0, step=100.0)
-    bonus_2 = st.number_input("Enter Person 2's annual bonus:", min_value=0.0, step=100.0)
-    thirteenth_month_2 = st.number_input("Enter Person 2's 13th month salary:", min_value=0.0, step=100.0)
-    monthly_expenses_2 = st.number_input("Enter Person 2's monthly expenses:", min_value=0.0, step=100.0)
-    start_age_2 = st.number_input("Enter Person 2's starting age:", min_value=0, step=1)
-    current_age_2 = st.number_input("Enter Person 2's current age:", min_value=0, step=1)
-    annual_investment_premium_2 = st.number_input("Enter Person 2's annual investment premium:", min_value=0.0,
-                                                  step=100.0)
-    annual_interest_rate_2 = st.number_input("Enter Person 2's annual interest rate (as a percentage):", min_value=0.0,
-                                             step=0.1)
-
-    st.subheader("Financial Milestones")
-    num_milestones = st.number_input("Enter the number of financial milestones:", min_value=0, step=1)
-    milestones = {}
-    for i in range(num_milestones):
-        age = st.number_input(f"Enter the age for milestone {i + 1}:", min_value=0, step=1)
-        amount = st.number_input(f"Enter the amount for milestone {i + 1} (negative for expenses, positive for gains):",
-                                 step=100.0)
-        milestones[age] = amount
-
-if st.button("Calculate"):
-    if analysis_type == 'Single':
+    if st.button("Calculate"):
         cpf_balance = calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses,
                                             start_age, current_age,
                                             annual_investment_premium,
@@ -257,25 +226,73 @@ if st.button("Calculate"):
 
         # Plotting the net worth
         fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(df.data['Year'], df.data['Net Worth'], marker='o', linestyle='-', color='b', label='Net Worth')
-        ax.set_xlabel('Year')
+        ax.plot(df.data['Age'], df.data['Net Worth'], marker='o', linestyle='-', color='b', label='Net Worth')
+        ax.set_xlabel('Age')
         ax.set_ylabel('Amount ($)')
         ax.set_title('Net Worth Over Time')
         ax.legend()
         ax.grid(True)
         st.pyplot(fig)
-    else:
+
+else:
+    st.subheader("Person 1")
+    salary_1 = st.number_input("Enter Person 1's monthly gross income:", min_value=0.0, step=100.0)
+    bonus_1 = st.number_input("Enter Person 1's annual bonus:", min_value=0.0, step=100.0)
+    thirteenth_month_1 = st.number_input("Enter Person 1's 13th month salary:", min_value=0.0, step=100.0)
+    monthly_expenses_1 = st.number_input("Enter Person 1's monthly expenses:", min_value=0.0, step=100.0)
+    start_age_1 = st.number_input("Enter Person 1's starting age:", min_value=0, step=1)
+    current_age_1 = st.number_input("Enter Person 1's current age:", min_value=0, step=1)
+    annual_investment_premium_1 = st.number_input("Enter Person 1's annual investment premium:", min_value=0.0,
+                                                  step=100.0)
+    annual_interest_rate_1 = st.number_input("Enter Person 1's annual interest rate (as a percentage):", min_value=0.0,
+                                             step=0.1)
+
+    st.subheader("Person 2")
+    salary_2 = st.number_input("Enter Person 2's monthly gross income:", min_value=0.0, step=100.0)
+    bonus_2 = st.number_input("Enter Person 2's annual bonus:", min_value=0.0, step=100.0)
+    thirteenth_month_2 = st.number_input("Enter Person 2's 13th month salary:", min_value=0.0, step=100.0)
+    monthly_expenses_2 = st.number_input("Enter Person 2's monthly expenses:", min_value=0.0, step=100.0)
+    start_age_2 = st.number_input("Enter Person 2's starting age:", min_value=0, step=1)
+    current_age_2 = st.number_input("Enter Person 2's current age:", min_value=0, step=1)
+    annual_investment_premium_2 = st.number_input("Enter Person 2's annual investment premium:", min_value=0.0,
+                                                  step=100.0)
+    annual_interest_rate_2 = st.number_input("Enter Person 2's annual interest rate (as a percentage):", min_value=0.0,
+                                             step=0.1)
+
+    st.subheader("Financial Milestones for Person 1")
+    num_milestones_1 = st.number_input("Enter the number of financial milestones for Person 1:", min_value=0, step=1)
+    milestones_1 = {}
+    for i in range(num_milestones_1):
+        age = st.number_input(f"Enter the age for milestone {i + 1} (Person 1's age):", min_value=0, step=1,
+                              key=f"age_1_{i}")
+        amount = st.number_input(f"Enter the amount for milestone {i + 1} (negative for expenses, positive for gains):",
+                                 step=100.0, key=f"amount_1_{i}")
+        milestones_1[age] = amount
+
+    st.subheader("Financial Milestones for Person 2")
+    num_milestones_2 = st.number_input("Enter the number of financial milestones for Person 2:", min_value=0, step=1)
+    milestones_2 = {}
+    for i in range(num_milestones_2):
+        age = st.number_input(f"Enter the age for milestone {i + 1} (Person 2's age):", min_value=0, step=1,
+                              key=f"age_2_{i}")
+        amount = st.number_input(f"Enter the amount for milestone {i + 1} (negative for expenses, positive for gains):",
+                                 step=100.0, key=f"amount_2_{i}")
+        milestones_2[age] = amount
+
+    if st.button("Calculate"):
         cpf_balance_1 = calculate_cpf_balance(salary_1, bonus_1, thirteenth_month_1, monthly_expenses_1,
                                               start_age_1, current_age_1,
                                               annual_investment_premium_1,
                                               annual_interest_rate_1,
-                                              milestones)
+                                              milestones_1, milestone_percentage=1.0)
         cpf_balance_2 = calculate_cpf_balance(salary_2, bonus_2, thirteenth_month_2, monthly_expenses_2,
                                               start_age_2, current_age_2,
                                               annual_investment_premium_2,
                                               annual_interest_rate_2,
-                                              milestones)
+                                              milestones_2, milestone_percentage=1.0)
 
+        # Create separate dataframes for each person
+        df_1 = pd.DataFrame(cpf_balance_1)
         # Create separate dataframes for each person
         df_1 = pd.DataFrame(cpf_balance_1)
         df_2 = pd.DataFrame(cpf_balance_2)
@@ -328,8 +345,8 @@ if st.button("Calculate"):
 
         # Plotting the net worth for Person 1
         fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(df_1.data['Year'], df_1.data['Net Worth'], marker='o', linestyle='-', color='b', label='Net Worth')
-        ax.set_xlabel('Year')
+        ax.plot(df_1.data['Age'], df_1.data['Net Worth'], marker='o', linestyle='-', color='b', label='Net Worth')
+        ax.set_xlabel('Age')
         ax.set_ylabel('Amount ($)')
         ax.set_title('Net Worth Over Time for Person 1')
         ax.legend()
@@ -384,8 +401,8 @@ if st.button("Calculate"):
 
         # Plotting the net worth for Person 2
         fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(df_2.data['Year'], df_2.data['Net Worth'], marker='o', linestyle='-', color='b', label='Net Worth')
-        ax.set_xlabel('Year')
+        ax.plot(df_2.data['Age'], df_2.data['Net Worth'], marker='o', linestyle='-', color='b', label='Net Worth')
+        ax.set_xlabel('Age')
         ax.set_ylabel('Amount ($)')
         ax.set_title('Net Worth Over Time for Person 2')
         ax.legend()
@@ -428,7 +445,6 @@ if st.button("Calculate"):
         st.write(f"Total CPF contribution: ${total_cpf_contribution_combined:.2f}")
         st.write(f"Total Employee CPF contribution: ${total_employee_contribution_combined:.2f}")
         st.write(f"Total OA (Ordinary Account) balance: ${total_oa_combined:.2f}")
-        st.write(f"Total SA (Special Account) balance: ${total_sa_combined:.2f}")
         st.write(f"Total SA (Special Account) balance: ${total_sa_combined:.2f}")
         st.write(f"Total MA (MediSave Account) balance: ${total_ma_combined:.2f}")
         st.write(f"Cumulative Cash Savings: ${cumulative_cash_savings_combined:.2f}")
