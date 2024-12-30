@@ -40,6 +40,7 @@ def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, sta
 
     years_worked = current_age - start_age
     cumulative_cash_savings = cumulative_oa = cumulative_sa = cumulative_ma = cumulative_investment_premium = investment_value = 0
+    net_worth = 0
 
     for year in range(years_worked):
         age = start_age + year
@@ -66,9 +67,10 @@ def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, sta
         # Apply financial milestones
         if age in milestones:
             net_worth += milestones[age] * milestone_percentage
+            cumulative_cash_savings += milestones[age] * milestone_percentage  # Ensure the effect is permanent
 
         cpf_balance['Year'].append(year + 1)
-        cpf_balance['Age'].append(age)
+        cpf_balance['Age'].append(age + 1)  # Add 1 to the age for display
         cpf_balance['Cumulative Cash Savings'].append(round(cumulative_cash_savings, 2))
         cpf_balance['Cumulative OA'].append(round(cumulative_oa, 2))
         cpf_balance['Cumulative SA'].append(round(cumulative_sa, 2))
@@ -265,10 +267,6 @@ else:
                                  step=100.0)
         milestones[age] = amount
 
-    # Adjust milestones for Person 2 based on the age difference
-    age_difference = start_age_1 - start_age_2
-    milestones_2 = {age - age_difference: amount for age, amount in milestones.items()}
-
     if st.button("Calculate"):
         cpf_balance_1 = calculate_cpf_balance(salary_1, bonus_1, thirteenth_month_1, monthly_expenses_1,
                                               start_age_1, current_age_1,
@@ -279,7 +277,7 @@ else:
                                               start_age_2, current_age_2,
                                               annual_investment_premium_2,
                                               annual_interest_rate_2,
-                                              milestones_2, milestone_percentage=0.5)
+                                              milestones, milestone_percentage=0.5)
 
         # Create separate dataframes for each person
         df_1 = pd.DataFrame(cpf_balance_1)
@@ -291,6 +289,7 @@ else:
         total_employee_contribution_1 = total_cpf_contribution_1 * (
                 df_1['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df_1['Age'].apply(get_cpf_rates).apply(
             lambda x: x[2]).mean())
+        total_oa_1 = df_1['Cumulative OA'].iloc[-1]
         total_oa_1 = df_1['Cumulative OA'].iloc[-1]
         total_sa_1 = df_1['Cumulative SA'].iloc[-1]
         total_ma_1 = df_1['Cumulative MA'].iloc[-1]
