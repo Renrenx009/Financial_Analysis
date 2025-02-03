@@ -1,6 +1,26 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import json
+import os
+
+# Function to save a profile
+def save_profile(profile_name, data):
+    if not os.path.exists("profiles"):
+        os.makedirs("profiles")
+    with open(f"profiles/{profile_name}.json", "w") as f:
+        json.dump(data, f)
+
+# Function to load a profile
+def load_profile(profile_name):
+    with open(f"profiles/{profile_name}.json", "r") as f:
+        return json.load(f)
+
+# Function to list all saved profiles
+def list_profiles():
+    if not os.path.exists("profiles"):
+        return []
+    return [f.replace(".json", "") for f in os.listdir("profiles") if f.endswith(".json")]
 
 def get_cpf_allocation_rates(age):
     if age <= 35:
@@ -146,91 +166,107 @@ def align_financial_data(df1, df2, start_age_1, start_age_2):
 st.header("Financial Analysis")
 st.subheader("Key in your information here")
 
+# Profile Management
+st.sidebar.header("Profile Management")
+profile_action = st.sidebar.radio("Profile Action", ["Create New Profile", "Load Existing Profile"])
+
+# Initialize session state for profile data
+if "profile_data" not in st.session_state:
+    st.session_state.profile_data = {
+        "salary": 0.0,
+        "bonus": 0.0,
+        "thirteenth_month": 0.0,
+        "monthly_expenses": 0.0,
+        "start_age": 0,
+        "current_age": 0,
+        "annual_investment_premium": 0.0,
+        "annual_interest_rate": 0.0,
+        "milestones": {}
+    }
+
+if profile_action == "Create New Profile":
+    profile_name = st.sidebar.text_input("Enter a name for your profile:")
+    if st.sidebar.button("Save Profile"):
+        if not profile_name:
+            st.sidebar.error("Please enter a profile name.")
+        else:
+            # Save the current input data as a profile
+            profile_data = {
+                "salary": st.session_state.profile_data["salary"],
+                "bonus": st.session_state.profile_data["bonus"],
+                "thirteenth_month": st.session_state.profile_data["thirteenth_month"],
+                "monthly_expenses": st.session_state.profile_data["monthly_expenses"],
+                "start_age": st.session_state.profile_data["start_age"],
+                "current_age": st.session_state.profile_data["current_age"],
+                "annual_investment_premium": st.session_state.profile_data["annual_investment_premium"],
+                "annual_interest_rate": st.session_state.profile_data["annual_interest_rate"],
+                "milestones": st.session_state.profile_data["milestones"]
+            }
+            save_profile(profile_name, profile_data)
+            st.sidebar.success(f"Profile '{profile_name}' saved successfully!")
+
+elif profile_action == "Load Existing Profile":
+    profiles = list_profiles()
+    if not profiles:
+        st.sidebar.warning("No profiles found. Please create a new profile.")
+    else:
+        selected_profile = st.sidebar.selectbox("Select a profile to load:", profiles)
+        if st.sidebar.button("Load Profile"):
+            profile_data = load_profile(selected_profile)
+            st.session_state.profile_data = profile_data
+            st.sidebar.success(f"Profile '{selected_profile}' loaded successfully!")
+
+# Input Fields
 analysis_type = st.radio("Is this analysis for a single person or a couple?", ('Single', 'Couple'))
 
 if analysis_type == 'Single':
-    salary = st.number_input("Enter your monthly gross income:", min_value=0.0, step=100.0)
-    bonus = st.number_input("Enter your annual bonus:", min_value=0.0, step=100.0)
-    thirteenth_month = st.number_input("Enter your 13th month salary:", min_value=0.0, step=100.0)
-    monthly_expenses = st.number_input("Enter your monthly expenses:", min_value=0.0, step=100.0)
-    start_age = st.number_input("Enter your starting age:", min_value=0, step=1)
-    current_age = st.number_input("Enter your current age:", min_value=0, step=1)
-    annual_investment_premium = st.number_input("Enter your annual investment premium:", min_value=0.0, step=100.0)
-    annual_interest_rate = st.number_input("Enter the annual interest rate (as a percentage):", min_value=0.0, step=0.1)
+    salary = st.number_input("Enter your monthly gross income:", min_value=0.0, step=100.0, value=st.session_state.profile_data["salary"])
+    bonus = st.number_input("Enter your annual bonus:", min_value=0.0, step=100.0, value=st.session_state.profile_data["bonus"])
+    thirteenth_month = st.number_input("Enter your 13th month salary:", min_value=0.0, step=100.0, value=st.session_state.profile_data["thirteenth_month"])
+    monthly_expenses = st.number_input("Enter your monthly expenses:", min_value=0.0, step=100.0, value=st.session_state.profile_data["monthly_expenses"])
+    start_age = st.number_input("Enter your starting age:", min_value=0, step=1, value=st.session_state.profile_data["start_age"])
+    current_age = st.number_input("Enter your current age:", min_value=0, step=1, value=st.session_state.profile_data["current_age"])
+    annual_investment_premium = st.number_input("Enter your annual investment premium:", min_value=0.0, step=100.0, value=st.session_state.profile_data["annual_investment_premium"])
+    annual_interest_rate = st.number_input("Enter the annual interest rate (as a percentage):", min_value=0.0, step=0.1, value=st.session_state.profile_data["annual_interest_rate"])
 
     st.subheader("Financial Milestones")
     num_milestones = st.number_input("Enter the number of financial milestones:", min_value=0, step=1)
-    milestones = {}
+    milestones = st.session_state.profile_data["milestones"]
     for i in range(num_milestones):
-        age = st.number_input(f"Enter the age for milestone {i + 1}:", min_value=0, step=1)
-        amount = st.number_input(f"Enter the amount for milestone {i + 1} (negative for expenses, positive for gains):",
-                                 step=100.0)
+        age = st.number_input(f"Enter the age for milestone {i + 1}:", min_value=0, step=1, key=f"age_{i}")
+        amount = st.number_input(f"Enter the amount for milestone {i + 1} (negative for expenses, positive for gains):", step=100.0, key=f"amount_{i}")
         milestones[age] = amount
 
+    # Update session state with current inputs
+    st.session_state.profile_data = {
+        "salary": salary,
+        "bonus": bonus,
+        "thirteenth_month": thirteenth_month,
+        "monthly_expenses": monthly_expenses,
+        "start_age": start_age,
+        "current_age": current_age,
+        "annual_investment_premium": annual_investment_premium,
+        "annual_interest_rate": annual_interest_rate,
+        "milestones": milestones
+    }
+
     if st.button("Calculate"):
-        cpf_balance = calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses,
-                                            start_age, current_age,
-                                            annual_investment_premium,
-                                            annual_interest_rate,
-                                            milestones)
+        cpf_balance = calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, start_age, current_age,
+                                            annual_investment_premium, annual_interest_rate, milestones)
 
         df = pd.DataFrame(cpf_balance)
 
-        total_years_worked = current_age - start_age
-        total_cpf_contribution = df['Cumulative OA'].iloc[-1] + df['Cumulative SA'].iloc[-1] + df['Cumulative MA'].iloc[
-            -1]
-        total_employee_contribution = total_cpf_contribution * (
-                    df['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df['Age'].apply(get_cpf_rates).apply(
-                lambda x: x[2]).mean())
-        total_oa = df['Cumulative OA'].iloc[-1]
-        total_sa = df['Cumulative SA'].iloc[-1]
-        total_ma = df['Cumulative MA'].iloc[-1]
-        cumulative_cash_savings = df['Cumulative Cash Savings'].iloc[-1]
-        net_monthly_salary = (salary * (1 - get_cpf_rates(current_age)[1])) - monthly_expenses
-        net_annual_salary = net_monthly_salary * 12 + bonus + thirteenth_month
-
-        total_investment_premium_paid = df['Cumulative Investment Premium'].iloc[-1]
-        investment_value = df['Investment Value'].iloc[-1]
-        net_worth = df['Net Worth'].iloc[-1]
-
+        # Display Results
         st.write("\nIn-Depth Analysis:")
-        st.write(f"Total years worked: {total_years_worked}")
-        st.write(f"Total CPF contribution: ${total_cpf_contribution:.2f}")
-        st.write(f"Total Employee CPF contribution: ${total_employee_contribution:.2f}")
-        st.write(f"Total OA (Ordinary Account) balance: ${total_oa:.2f}")
-        st.write(f"Total SA (Special Account) balance: ${total_sa:.2f}")
-        st.write(f"Total MA (MediSave Account) balance: ${total_ma:.2f}")
-        st.write(f"Cumulative Cash Savings: ${cumulative_cash_savings:.2f}")
-        st.write(f"Net Monthly Salary: ${net_monthly_salary:.2f}")
-        st.write(f"Net Annual Salary: ${net_annual_salary:.2f}")
-        st.write(f"Total Investment Premium Paid: ${total_investment_premium_paid:.2f}")
-        st.write(f"Total Investment Value: ${investment_value:.2f}")
-        st.write(f"Net Worth: ${net_worth:.2f}")
-
-        # Format the DataFrame to show dollar signs and two decimal places
-        df = df.style.format({
-            'Cumulative Cash Savings': '${:,.2f}',
-            'Cumulative OA': '${:,.2f}',
-            'Cumulative SA': '${:,.2f}',
-            'Cumulative MA': '${:,.2f}',
-            'Cumulative Total CPF': '${:,.2f}',
-            'Cumulative Investment Premium': '${:,.2f}',
-            'Investment Value': '${:,.2f}',
-            'Net Worth': '${:,.2f}'
-        })
-
         st.write(df)
 
-        # Plotting the net worth using Plotly
+        # Plot Net Worth Over Time
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=df.data['Age'], y=df.data['Net Worth'], mode='lines+markers', name='Net Worth'))
-        fig.update_layout(title='Net Worth Over Time',
-                          xaxis_title='Age',
-                          yaxis_title='Amount ($)',
-                          template='plotly_white')
+        fig.add_trace(go.Scatter(x=df['Age'], y=df['Net Worth'], mode='lines+markers', name='Net Worth'))
+        fig.update_layout(title='Net Worth Over Time', xaxis_title='Age', yaxis_title='Amount ($)', template='plotly_white')
         st.plotly_chart(fig)
 
-else:
+elif analysis_type == 'Couple':
     st.subheader("Person 1")
     salary_1 = st.number_input("Enter Person 1's monthly gross income:", min_value=0.0, step=100.0)
     bonus_1 = st.number_input("Enter Person 1's annual bonus:", min_value=0.0, step=100.0)
@@ -238,10 +274,8 @@ else:
     monthly_expenses_1 = st.number_input("Enter Person 1's monthly expenses:", min_value=0.0, step=100.0)
     start_age_1 = st.number_input("Enter Person 1's starting age:", min_value=0, step=1)
     current_age_1 = st.number_input("Enter Person 1's current age:", min_value=0, step=1)
-    annual_investment_premium_1 = st.number_input("Enter Person 1's annual investment premium:", min_value=0.0,
-                                                  step=100.0)
-    annual_interest_rate_1 = st.number_input("Enter Person 1's annual interest rate (as a percentage):", min_value=0.0,
-                                             step=0.1)
+    annual_investment_premium_1 = st.number_input("Enter Person 1's annual investment premium:", min_value=0.0, step=100.0)
+    annual_interest_rate_1 = st.number_input("Enter Person 1's annual interest rate (as a percentage):", min_value=0.0, step=0.1)
 
     st.subheader("Person 2")
     salary_2 = st.number_input("Enter Person 2's monthly gross income:", min_value=0.0, step=100.0)
@@ -250,31 +284,23 @@ else:
     monthly_expenses_2 = st.number_input("Enter Person 2's monthly expenses:", min_value=0.0, step=100.0)
     start_age_2 = st.number_input("Enter Person 2's starting age:", min_value=0, step=1)
     current_age_2 = st.number_input("Enter Person 2's current age:", min_value=0, step=1)
-    annual_investment_premium_2 = st.number_input("Enter Person 2's annual investment premium:", min_value=0.0,
-                                                  step=100.0)
-    annual_interest_rate_2 = st.number_input("Enter Person 2's annual interest rate (as a percentage):", min_value=0.0,
-                                             step=0.1)
+    annual_investment_premium_2 = st.number_input("Enter Person 2's annual investment premium:", min_value=0.0, step=100.0)
+    annual_interest_rate_2 = st.number_input("Enter Person 2's annual interest rate (as a percentage):", min_value=0.0, step=0.1)
 
     st.subheader("Financial Milestones for Person 1")
     num_milestones_1 = st.number_input("Enter the number of financial milestones for Person 1:", min_value=0, step=1)
     milestones_1 = {}
     for i in range(num_milestones_1):
-        age = st.number_input(f"Enter the age for milestone {i + 1} (Person 1's age):", min_value=0, step=1,
-                              key=f"age_1_{i}")
-        amount = st.number_input(f"Enter the amount for milestone {i + 1} (negative for expenses, positive for gains):",
-                                 step=100.0, key=f"amount_1_{i}")
+        age = st.number_input(f"Enter the age for milestone {i + 1} (Person 1's age):", min_value=0, step=1, key=f"age_1_{i}")
+        amount = st.number_input(f"Enter the amount for milestone {i + 1} (negative for expenses, positive for gains):", step=100.0, key=f"amount_1_{i}")
         milestones_1[age] = amount
 
     st.subheader("Financial Milestones for Person 2")
     num_milestones_2 = st.number_input("Enter the number of financial milestones for Person 2:", min_value=0, step=1)
     milestones_2 = {}
     for i in range(num_milestones_2):
-        age = st.number_input(f"Enter the age for milestone {i + 1} (Person 2's age):", min_value=0, step=1,
-                              key=f"age_2_{i}")
-        amount = st.number_input(f"Enter the amount for milestone {i + 1} (negative for expenses, positive for gains):",
-                                 step=100.0, key=f"amount_2_{i}")
+        age = st.number_input(f"Enter the age for milestone {i + 1} (Person 2's age_{i}")
         milestones_2[age] = amount
-
     if st.button("Calculate"):
         cpf_balance_1 = calculate_cpf_balance(salary_1, bonus_1, thirteenth_month_1, monthly_expenses_1,
                                               start_age_1, current_age_1,
@@ -295,8 +321,8 @@ else:
         total_cpf_contribution_1 = df_1['Cumulative OA'].iloc[-1] + df_1['Cumulative SA'].iloc[-1] + \
                                    df_1['Cumulative MA'].iloc[-1]
         total_employee_contribution_1 = total_cpf_contribution_1 * (
-                    df_1['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df_1['Age'].apply(
-                get_cpf_rates).apply(lambda x: x[2]).mean())
+                df_1['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df_1['Age'].apply(
+            get_cpf_rates).apply(lambda x: x[2]).mean())
         total_oa_1 = df_1['Cumulative OA'].iloc[-1]
         total_sa_1 = df_1['Cumulative SA'].iloc[-1]
         total_ma_1 = df_1['Cumulative MA'].iloc[-1]
@@ -351,8 +377,8 @@ else:
         total_cpf_contribution_2 = df_2['Cumulative OA'].iloc[-1] + df_2['Cumulative SA'].iloc[-1] + \
                                    df_2['Cumulative MA'].iloc[-1]
         total_employee_contribution_2 = total_cpf_contribution_2 * (
-                    df_2['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df_2['Age'].apply(
-                get_cpf_rates).apply(lambda x: x[2]).mean())
+                df_2['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df_2['Age'].apply(
+            get_cpf_rates).apply(lambda x: x[2]).mean())
         total_oa_2 = df_2['Cumulative OA'].iloc[-1]
         total_sa_2 = df_2['Cumulative SA'].iloc[-1]
         total_ma_2 = df_2['Cumulative MA'].iloc[-1]
@@ -418,7 +444,6 @@ else:
             'Net Worth': '${:,.2f}'
         })
 
-        st.subheader("Combined Financial Analysis")
         st.write(df_combined)
 
         total_years_worked_combined = max(total_years_worked_1, total_years_worked_2)
