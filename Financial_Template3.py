@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 def get_cpf_allocation_rates(age):
     if age <= 35:
@@ -34,9 +34,7 @@ def get_cpf_rates(age):
 
 def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, start_age, current_age,
                           annual_investment_premium, annual_interest_rate, milestones, milestone_percentage=1.0):
-    cpf_balance = {'Year': [], 'Age': [], 'Cumulative Cash Savings': [], 'Cumulative OA': [], 'Cumulative SA': [],
-                   'Cumulative MA': [], 'Cumulative Total CPF': [], 'Cumulative Investment Premium': [],
-                   'Investment Value': [], 'Net Worth': []}
+    cpf_balance = {'Year': [], 'Age': [], 'Cumulative Cash Savings': [], 'Cumulative OA': [], 'Cumulative SA': [], 'Cumulative MA': [], 'Cumulative Total CPF': [], 'Cumulative Investment Premium': [], 'Investment Value': [], 'Net Worth': []}
 
     years_worked = current_age - start_age
     cumulative_cash_savings = cumulative_oa = cumulative_sa = cumulative_ma = cumulative_investment_premium = investment_value = 0
@@ -70,7 +68,7 @@ def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, sta
             cumulative_cash_savings += milestones[age] * milestone_percentage  # Ensure the effect is permanent
 
         cpf_balance['Year'].append(year + 1)
-        cpf_balance['Age'].append(age + 1)  # Add 1 to the age for display
+        cpf_balance['Age'].append(age)  # Use the current age without incrementing
         cpf_balance['Cumulative Cash Savings'].append(round(cumulative_cash_savings, 2))
         cpf_balance['Cumulative OA'].append(round(cumulative_oa, 2))
         cpf_balance['Cumulative SA'].append(round(cumulative_sa, 2))
@@ -182,8 +180,8 @@ if analysis_type == 'Single':
         total_cpf_contribution = df['Cumulative OA'].iloc[-1] + df['Cumulative SA'].iloc[-1] + df['Cumulative MA'].iloc[
             -1]
         total_employee_contribution = total_cpf_contribution * (
-                df['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df['Age'].apply(get_cpf_rates).apply(
-            lambda x: x[2]).mean())
+                    df['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df['Age'].apply(get_cpf_rates).apply(
+                lambda x: x[2]).mean())
         total_oa = df['Cumulative OA'].iloc[-1]
         total_sa = df['Cumulative SA'].iloc[-1]
         total_ma = df['Cumulative MA'].iloc[-1]
@@ -223,15 +221,14 @@ if analysis_type == 'Single':
 
         st.write(df)
 
-        # Plotting the net worth
-        fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(df.data['Age'], df.data['Net Worth'], marker='o', linestyle='-', color='b', label='Net Worth')
-        ax.set_xlabel('Age')
-        ax.set_ylabel('Amount ($)')
-        ax.set_title('Net Worth Over Time')
-        ax.legend()
-        ax.grid(True)
-        st.pyplot(fig)
+        # Plotting the net worth using Plotly
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=df.data['Age'], y=df.data['Net Worth'], mode='lines+markers', name='Net Worth'))
+        fig.update_layout(title='Net Worth Over Time',
+                          xaxis_title='Age',
+                          yaxis_title='Amount ($)',
+                          template='plotly_white')
+        st.plotly_chart(fig)
 
 else:
     st.subheader("Person 1")
@@ -258,26 +255,37 @@ else:
     annual_interest_rate_2 = st.number_input("Enter Person 2's annual interest rate (as a percentage):", min_value=0.0,
                                              step=0.1)
 
-    st.subheader("Financial Milestones")
-    num_milestones = st.number_input("Enter the number of financial milestones:", min_value=0, step=1)
-    milestones = {}
-    for i in range(num_milestones):
-        age = st.number_input(f"Enter the age for milestone {i + 1} (Person 1's age):", min_value=0, step=1)
+    st.subheader("Financial Milestones for Person 1")
+    num_milestones_1 = st.number_input("Enter the number of financial milestones for Person 1:", min_value=0, step=1)
+    milestones_1 = {}
+    for i in range(num_milestones_1):
+        age = st.number_input(f"Enter the age for milestone {i + 1} (Person 1's age):", min_value=0, step=1,
+                              key=f"age_1_{i}")
         amount = st.number_input(f"Enter the amount for milestone {i + 1} (negative for expenses, positive for gains):",
-                                 step=100.0)
-        milestones[age] = amount
+                                 step=100.0, key=f"amount_1_{i}")
+        milestones_1[age] = amount
+
+    st.subheader("Financial Milestones for Person 2")
+    num_milestones_2 = st.number_input("Enter the number of financial milestones for Person 2:", min_value=0, step=1)
+    milestones_2 = {}
+    for i in range(num_milestones_2):
+        age = st.number_input(f"Enter the age for milestone {i + 1} (Person 2's age):", min_value=0, step=1,
+                              key=f"age_2_{i}")
+        amount = st.number_input(f"Enter the amount for milestone {i + 1} (negative for expenses, positive for gains):",
+                                 step=100.0, key=f"amount_2_{i}")
+        milestones_2[age] = amount
 
     if st.button("Calculate"):
         cpf_balance_1 = calculate_cpf_balance(salary_1, bonus_1, thirteenth_month_1, monthly_expenses_1,
                                               start_age_1, current_age_1,
                                               annual_investment_premium_1,
                                               annual_interest_rate_1,
-                                              milestones, milestone_percentage=0.5)
+                                              milestones_1, milestone_percentage=1.0)
         cpf_balance_2 = calculate_cpf_balance(salary_2, bonus_2, thirteenth_month_2, monthly_expenses_2,
                                               start_age_2, current_age_2,
                                               annual_investment_premium_2,
                                               annual_interest_rate_2,
-                                              milestones, milestone_percentage=0.5)
+                                              milestones_2, milestone_percentage=1.0)
 
         # Create separate dataframes for each person
         df_1 = pd.DataFrame(cpf_balance_1)
@@ -287,9 +295,8 @@ else:
         total_cpf_contribution_1 = df_1['Cumulative OA'].iloc[-1] + df_1['Cumulative SA'].iloc[-1] + \
                                    df_1['Cumulative MA'].iloc[-1]
         total_employee_contribution_1 = total_cpf_contribution_1 * (
-                df_1['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df_1['Age'].apply(get_cpf_rates).apply(
-            lambda x: x[2]).mean())
-        total_oa_1 = df_1['Cumulative OA'].iloc[-1]
+                    df_1['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df_1['Age'].apply(
+                get_cpf_rates).apply(lambda x: x[2]).mean())
         total_oa_1 = df_1['Cumulative OA'].iloc[-1]
         total_sa_1 = df_1['Cumulative SA'].iloc[-1]
         total_ma_1 = df_1['Cumulative MA'].iloc[-1]
@@ -330,22 +337,22 @@ else:
 
         st.write(df_1)
 
-        # Plotting the net worth for Person 1
-        fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(df_1.data['Age'], df_1.data['Net Worth'], marker='o', linestyle='-', color='b', label='Net Worth')
-        ax.set_xlabel('Age')
-        ax.set_ylabel('Amount ($)')
-        ax.set_title('Net Worth Over Time for Person 1')
-        ax.legend()
-        ax.grid(True)
-        st.pyplot(fig)
+        # Plotting the net worth for Person 1 using Plotly
+        fig_1 = go.Figure()
+        fig_1.add_trace(
+            go.Scatter(x=df_1.data['Age'], y=df_1.data['Net Worth'], mode='lines+markers', name='Net Worth'))
+        fig_1.update_layout(title='Net Worth Over Time for Person 1',
+                            xaxis_title='Age',
+                            yaxis_title='Amount ($)',
+                            template='plotly_white')
+        st.plotly_chart(fig_1)
 
         total_years_worked_2 = current_age_2 - start_age_2
         total_cpf_contribution_2 = df_2['Cumulative OA'].iloc[-1] + df_2['Cumulative SA'].iloc[-1] + \
                                    df_2['Cumulative MA'].iloc[-1]
         total_employee_contribution_2 = total_cpf_contribution_2 * (
-                df_2['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df_2['Age'].apply(get_cpf_rates).apply(
-            lambda x: x[2]).mean())
+                    df_2['Age'].apply(get_cpf_rates).apply(lambda x: x[1]).mean() / df_2['Age'].apply(
+                get_cpf_rates).apply(lambda x: x[2]).mean())
         total_oa_2 = df_2['Cumulative OA'].iloc[-1]
         total_sa_2 = df_2['Cumulative SA'].iloc[-1]
         total_ma_2 = df_2['Cumulative MA'].iloc[-1]
@@ -386,15 +393,15 @@ else:
 
         st.write(df_2)
 
-        # Plotting the net worth for Person 2
-        fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(df_2.data['Age'], df_2.data['Net Worth'], marker='o', linestyle='-', color='b', label='Net Worth')
-        ax.set_xlabel('Age')
-        ax.set_ylabel('Amount ($)')
-        ax.set_title('Net Worth Over Time for Person 2')
-        ax.legend()
-        ax.grid(True)
-        st.pyplot(fig)
+        # Plotting the net worth for Person 2 using Plotly
+        fig_2 = go.Figure()
+        fig_2.add_trace(
+            go.Scatter(x=df_2.data['Age'], y=df_2.data['Net Worth'], mode='lines+markers', name='Net Worth'))
+        fig_2.update_layout(title='Net Worth Over Time for Person 2',
+                            xaxis_title='Age',
+                            yaxis_title='Amount ($)',
+                            template='plotly_white')
+        st.plotly_chart(fig_2)
 
         # Align financial data based on age range
         df_combined = align_financial_data(df_1.data, df_2.data, start_age_1, start_age_2)
@@ -441,13 +448,13 @@ else:
         st.write(f"Total Investment Value: ${investment_value_combined:.2f}")
         st.write(f"Net Worth: ${net_worth_combined:.2f}")
 
-        # Plotting the combined net worth
-        fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(df_combined.data['Year'], df_combined.data['Net Worth'], marker='o', linestyle='-', color='b',
-                label='Net Worth')
-        ax.set_xlabel('Year')
-        ax.set_ylabel('Amount ($)')
-        ax.set_title('Combined Net Worth Over Time')
-        ax.legend()
-        ax.grid(True)
-        st.pyplot(fig)
+        # Plotting the combined net worth using Plotly
+        fig_combined = go.Figure()
+        fig_combined.add_trace(
+            go.Scatter(x=df_combined.data['Year'], y=df_combined.data['Net Worth'], mode='lines+markers',
+                       name='Net Worth'))
+        fig_combined.update_layout(title='Combined Net Worth Over Time',
+                                   xaxis_title='Year',
+                                   yaxis_title='Amount ($)',
+                                   template='plotly_white')
+        st.plotly_chart(fig_combined)
