@@ -22,6 +22,11 @@ def list_profiles():
         return []
     return [f.replace(".json", "") for f in os.listdir("profiles") if f.endswith(".json")]
 
+# Function to delete a profile
+def delete_profile(profile_name):
+    if os.path.exists(f"profiles/{profile_name}.json"):
+        os.remove(f"profiles/{profile_name}.json")
+
 def get_cpf_allocation_rates(age):
     if age <= 35:
         return 0.6217, 0.1621, 0.2162
@@ -168,7 +173,7 @@ st.subheader("Key in your information here")
 
 # Profile Management
 st.sidebar.header("Profile Management")
-profile_action = st.sidebar.radio("Profile Action", ["Create New Profile", "Load Existing Profile"])
+profile_action = st.sidebar.radio("Profile Action", ["Create New Profile", "Load Existing Profile", "Delete Profile"])
 
 # Initialize session state for profile data
 if "profile_data" not in st.session_state:
@@ -215,6 +220,16 @@ elif profile_action == "Load Existing Profile":
             profile_data = load_profile(selected_profile)
             st.session_state.profile_data = profile_data
             st.sidebar.success(f"Profile '{selected_profile}' loaded successfully!")
+
+elif profile_action == "Delete Profile":
+    profiles = list_profiles()
+    if not profiles:
+        st.sidebar.warning("No profiles found. Please create a new profile.")
+    else:
+        selected_profile = st.sidebar.selectbox("Select a profile to delete:", profiles)
+        if st.sidebar.button("Delete Profile"):
+            delete_profile(selected_profile)
+            st.sidebar.success(f"Profile '{selected_profile}' deleted successfully!")
 
 # Input Fields
 analysis_type = st.radio("Is this analysis for a single person or a couple?", ('Single', 'Couple'))
