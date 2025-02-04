@@ -198,8 +198,25 @@ if "profile_data" not in st.session_state:
 
 # Profile Management
 st.sidebar.header("Profile Management")
-profile_action = st.sidebar.radio("Profile Action",
-                                  ["Create New Profile", "Load Existing Profile", "Delete Profile"])
+profile_action = st.sidebar.radio("Profile Action", ["Create New Profile", "Load Existing Profile", "Delete Profile"])
+
+# Initialize session state for profile data
+if "profile_data" not in st.session_state:
+    st.session_state.profile_data = {
+        "salary": 0.0,
+        "bonus": 0.0,
+        "thirteenth_month": 0.0,
+        "monthly_expenses": 0.0,
+        "start_age": 0,
+        "current_age": 0,
+        "annual_investment_premium": 0.0,
+        "annual_interest_rate": 0.0,
+        "milestones": {},
+        "existing_oa": 0.0,
+        "existing_sa": 0.0,
+        "existing_ma": 0.0,
+        "existing_cash": 0.0
+    }
 
 if profile_action == "Create New Profile":
     profile_name = st.sidebar.text_input("Enter a name for your profile:")
@@ -265,8 +282,10 @@ if analysis_type == 'Single':
                                   value=st.session_state.profile_data["current_age"])
     annual_investment_premium = st.number_input("Enter your annual investment premium:", min_value=0.0, step=100.0,
                                                 value=st.session_state.profile_data["annual_investment_premium"])
-    annual_interest_rate = st.number_input("Enter the annual interest rate (as a percentage):", min_value=0.0,
-                                           step=0.1, value=st.session_state.profile_data["annual_interest_rate"])
+    annual_interest_rate = st.number_input("Enter the annual interest rate (as a percentage):", min_value=0.0, step=0.1,
+                                           value=st.session_state.profile_data["annual_interest_rate"])
+
+    # Input fields for existing balances
     existing_oa = st.number_input("Enter your existing OA balance:", min_value=0.0, step=100.0,
                                   value=st.session_state.profile_data["existing_oa"])
     existing_sa = st.number_input("Enter your existing SA balance:", min_value=0.0, step=100.0,
@@ -281,9 +300,8 @@ if analysis_type == 'Single':
     milestones = st.session_state.profile_data["milestones"]
     for i in range(num_milestones):
         age = st.number_input(f"Enter the age for milestone {i + 1}:", min_value=0, step=1, key=f"age_{i}")
-        amount = st.number_input(
-            f"Enter the amount for milestone {i + 1} (negative for expenses, positive for gains):", step=100.0,
-            key=f"amount_{i}")
+        amount = st.number_input(f"Enter the amount for milestone {i + 1} (negative for expenses, positive for gains):",
+                                 step=100.0, key=f"amount_{i}")
         milestones[age] = amount
 
     # Update session state with current inputs
@@ -301,7 +319,7 @@ if analysis_type == 'Single':
         "existing_sa": existing_sa,
         "existing_ma": existing_ma,
         "existing_cash": existing_cash
-        }
+    }
 
     if st.button("Calculate"):
             cpf_balance = calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, start_age,
