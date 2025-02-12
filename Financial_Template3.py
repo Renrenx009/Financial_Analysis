@@ -60,7 +60,7 @@ def get_cpf_rates(age):
 # CPF balance calculation
 def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, start_age, current_age,
                           annual_investment_premium, annual_interest_rate, milestones, milestone_percentage=1.0,
-                          existing_oa=0, existing_sa=0, existing_ma=0, existing_cash=0):
+                          existing_oa=0, existing_sa=0, existing_ma=0, existing_cash=0, investment_start_age=0):
     cpf_balance = {
         'Year': [], 'Age': [], 'Cumulative Cash Savings': [], 'Cumulative OA': [], 'Cumulative SA': [],
         'Cumulative MA': [], 'Cumulative Total CPF': [], 'Cumulative Investment Premium': [],
@@ -73,7 +73,6 @@ def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, sta
     cumulative_ma = existing_ma
     cumulative_investment_premium = investment_value = 0
     net_worth = 0
-
     for year in range(years_worked):
         age = start_age + year
         oa_rate, sa_rate, ma_rate = get_cpf_allocation_rates(age)
@@ -82,21 +81,22 @@ def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, sta
         cpf_contribution = annual_income * total_rate
         net_monthly_salary = (salary * (1 - employee_rate)) - monthly_expenses
         net_annual_salary = (net_monthly_salary * 12) + (bonus * (1 - employee_rate)) + (
-                thirteenth_month * (1 - employee_rate))
-        cumulative_cash_savings += net_annual_salary - annual_investment_premium
+            thirteenth_month * (1 - employee_rate))
+        cumulative_cash_savings += net_annual_salary
+        # Apply annual investment premium only after the investment start age
+        if age >= investment_start_age:
+            cumulative_cash_savings -= annual_investment_premium
+            cumulative_investment_premium += annual_investment_premium
+            investment_value = (investment_value + annual_investment_premium) * (1 + annual_interest_rate / 100)
         cumulative_oa += cpf_contribution * oa_rate
         cumulative_sa += cpf_contribution * sa_rate
         cumulative_ma += cpf_contribution * ma_rate
-        cumulative_investment_premium += annual_investment_premium
-        investment_value = (investment_value + annual_investment_premium) * (1 + annual_interest_rate / 100)
         cumulative_total_cpf = cumulative_oa + cumulative_sa + cumulative_ma
-        net_worth = cumulative_cash_savings + cumulative_oa + cumulative_sa
-
+        net_worth = cumulative_cash_savings + cumulative_oa + cumulative_sa + investment_value
         # Apply financial milestones
         if age in milestones:
             net_worth += milestones[age] * milestone_percentage
             cumulative_cash_savings += milestones[age] * milestone_percentage  # Ensure the effect is permanent
-
         cpf_balance['Year'].append(year + 1)
         cpf_balance['Age'].append(age)
         cpf_balance['Cumulative Cash Savings'].append(round(cumulative_cash_savings, 2))
@@ -107,14 +107,12 @@ def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, sta
         cpf_balance['Cumulative Investment Premium'].append(round(cumulative_investment_premium, 2))
         cpf_balance['Investment Value'].append(round(investment_value, 2))
         cpf_balance['Net Worth'].append(round(net_worth, 2))
-
     return cpf_balance
 
 def align_financial_data(df1, df2, start_age_1, start_age_2):
     # Determine the age range for alignment
     min_age = min(start_age_1, start_age_2)
     max_age = max(df1['Age'].iloc[-1], df2['Age'].iloc[-1])
-
     # Create a new DataFrame to hold the combined data
     combined_data = {
         'Year': list(range(1, max_age - min_age + 2)),
@@ -127,7 +125,6 @@ def align_financial_data(df1, df2, start_age_1, start_age_2):
         'Investment Value': [],
         'Net Worth': []
     }
-
     # Initialize financial values
     cumulative_cash_savings_1 = cumulative_cash_savings_2 = 0
     cumulative_oa_1 = cumulative_oa_2 = 0
@@ -137,7 +134,6 @@ def align_financial_data(df1, df2, start_age_1, start_age_2):
     cumulative_investment_premium_1 = cumulative_investment_premium_2 = 0
     investment_value_1 = investment_value_2 = 0
     net_worth_1 = net_worth_2 = 0
-
     for year in combined_data['Year']:
         age = min_age + year - 1
         if age in df1['Age'].values:
@@ -150,7 +146,6 @@ def align_financial_data(df1, df2, start_age_1, start_age_2):
             cumulative_investment_premium_1 = df1['Cumulative Investment Premium'].iloc[idx]
             investment_value_1 = df1['Investment Value'].iloc[idx]
             net_worth_1 = df1['Net Worth'].iloc[idx]
-
         if age in df2['Age'].values:
             idx = df2['Age'].values.tolist().index(age)
             cumulative_cash_savings_2 = df2['Cumulative Cash Savings'].iloc[idx]
@@ -161,7 +156,6 @@ def align_financial_data(df1, df2, start_age_1, start_age_2):
             cumulative_investment_premium_2 = df2['Cumulative Investment Premium'].iloc[idx]
             investment_value_2 = df2['Investment Value'].iloc[idx]
             net_worth_2 = df2['Net Worth'].iloc[idx]
-
         combined_data['Cumulative Cash Savings'].append(cumulative_cash_savings_1 + cumulative_cash_savings_2)
         combined_data['Cumulative OA'].append(cumulative_oa_1 + cumulative_oa_2)
         combined_data['Cumulative SA'].append(cumulative_sa_1 + cumulative_sa_2)
@@ -171,7 +165,6 @@ def align_financial_data(df1, df2, start_age_1, start_age_2):
             cumulative_investment_premium_1 + cumulative_investment_premium_2)
         combined_data['Investment Value'].append(investment_value_1 + investment_value_2)
         combined_data['Net Worth'].append(net_worth_1 + net_worth_2)
-
     return pd.DataFrame(combined_data)
 
 # Streamlit App
@@ -195,7 +188,8 @@ if "profile_data" not in st.session_state:
             "existing_oa": 0.0,
             "existing_sa": 0.0,
             "existing_ma": 0.0,
-            "existing_cash": 0.0
+            "existing_cash": 0.0,
+            "investment_start_age": 0
         }
     }
 
@@ -215,13 +209,13 @@ if st.session_state.profile_data["analysis_type"] == "Couple":
             "existing_oa": 0.0,
             "existing_sa": 0.0,
             "existing_ma": 0.0,
-            "existing_cash": 0.0
+            "existing_cash": 0.0,
+            "investment_start_age": 0
         }
 
 # Profile Management
 st.sidebar.header("Profile Management")
 profile_action = st.sidebar.radio("Profile Action", ["Create New Profile", "Load Existing Profile", "Delete Profile"])
-
 if profile_action == "Create New Profile":
     profile_name = st.sidebar.text_input("Enter a name for your profile:")
     if st.sidebar.button("Save Profile"):
@@ -237,7 +231,6 @@ if profile_action == "Create New Profile":
                 profile_data["person_2"] = st.session_state.profile_data["person_2"]
             save_profile(profile_name, profile_data)
             st.sidebar.success(f"Profile '{profile_name}' saved successfully!")
-
 elif profile_action == "Load Existing Profile":
     profiles = list_profiles()
     if not profiles:
@@ -252,7 +245,6 @@ elif profile_action == "Load Existing Profile":
                 "person_2": profile_data.get("person_2", {}) if profile_data.get("analysis_type") == "Couple" else {}
             }
             st.sidebar.success(f"Profile '{selected_profile}' loaded successfully!")
-
 elif profile_action == "Delete Profile":
     profiles = list_profiles()
     if not profiles:
@@ -266,6 +258,25 @@ elif profile_action == "Delete Profile":
 # Input Fields
 analysis_type = st.radio("Is this analysis for a single person or a couple?", ('Single', 'Couple'))
 st.session_state.profile_data["analysis_type"] = analysis_type
+
+# Dynamically initialize "person_2" if switching to "Couple"
+if analysis_type == "Couple" and "person_2" not in st.session_state.profile_data:
+    st.session_state.profile_data["person_2"] = {
+        "salary": 0.0,
+        "bonus": 0.0,
+        "thirteenth_month": 0.0,
+        "monthly_expenses": 0.0,
+        "start_age": 0,
+        "current_age": 0,
+        "annual_investment_premium": 0.0,
+        "annual_interest_rate": 0.0,
+        "milestones": {},
+        "existing_oa": 0.0,
+        "existing_sa": 0.0,
+        "existing_ma": 0.0,
+        "existing_cash": 0.0,
+        "investment_start_age": 0
+    }
 
 if analysis_type == 'Single':
     # Single person inputs
@@ -281,19 +292,21 @@ if analysis_type == 'Single':
                                 value=st.session_state.profile_data["person_1"]["start_age"])
     current_age = st.number_input("Enter your current age:", min_value=0, step=1,
                                   value=st.session_state.profile_data["person_1"]["current_age"])
+    investment_start_age = st.number_input("Enter the start age for annual investment premium:", min_value=0, step=1,
+                                           value=st.session_state.profile_data["person_1"]["investment_start_age"])
     annual_investment_premium = st.number_input("Enter your annual investment premium:", min_value=0.0, step=100.0,
-                                                value=st.session_state.profile_data["person_1"]["annual_investment_premium"])
+                                                value=st.session_state.profile_data["person_1"][
+                                                    "annual_investment_premium"])
     annual_interest_rate = st.number_input("Enter the annual interest rate (as a percentage):", min_value=0.0, step=0.1,
                                            value=st.session_state.profile_data["person_1"]["annual_interest_rate"])
-    existing_oa = st.number_input("Enter your existing OA balance:", min_value=0.0, step=100.0,
+    existing_oa = st.number_input("Enter your existing OA balance at starting age:", min_value=0.0, step=100.0,
                                   value=st.session_state.profile_data["person_1"]["existing_oa"])
-    existing_sa = st.number_input("Enter your existing SA balance:", min_value=0.0, step=100.0,
+    existing_sa = st.number_input("Enter your existing SA balance at starting age:", min_value=0.0, step=100.0,
                                   value=st.session_state.profile_data["person_1"]["existing_sa"])
-    existing_ma = st.number_input("Enter your existing MA balance:", min_value=0.0, step=100.0,
+    existing_ma = st.number_input("Enter your existing MA balance at starting age:", min_value=0.0, step=100.0,
                                   value=st.session_state.profile_data["person_1"]["existing_ma"])
-    existing_cash = st.number_input("Enter your existing cash balance:", min_value=0.0, step=100.0,
+    existing_cash = st.number_input("Enter your existing cash balance at starting age:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_1"]["existing_cash"])
-
     st.subheader("Financial Milestones")
     num_milestones = st.number_input("Enter the number of financial milestones:", min_value=0, step=1)
     milestones = {}
@@ -312,6 +325,7 @@ if analysis_type == 'Single':
         "monthly_expenses": monthly_expenses,
         "start_age": start_age,
         "current_age": current_age,
+        "investment_start_age": investment_start_age,
         "annual_investment_premium": annual_investment_premium,
         "annual_interest_rate": annual_interest_rate,
         "milestones": milestones,
@@ -325,7 +339,8 @@ if analysis_type == 'Single':
         cpf_balance = calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, start_age,
                                             current_age, annual_investment_premium, annual_interest_rate, milestones,
                                             existing_oa=existing_oa, existing_sa=existing_sa,
-                                            existing_ma=existing_ma, existing_cash=existing_cash)
+                                            existing_ma=existing_ma, existing_cash=existing_cash,
+                                            investment_start_age=investment_start_age)
         df = pd.DataFrame(cpf_balance)
         # Display Results
         st.write("\nIn-Depth Analysis:")
@@ -352,21 +367,24 @@ elif analysis_type == 'Couple':
                                   value=st.session_state.profile_data["person_1"]["start_age"])
     current_age_1 = st.number_input("Enter Person 1's current age:", min_value=0, step=1,
                                     value=st.session_state.profile_data["person_1"]["current_age"])
+    investment_start_age_1 = st.number_input("Enter Person 1's start age for annual investment premium:", min_value=0,
+                                             step=1,
+                                             value=st.session_state.profile_data["person_1"]["investment_start_age"])
     annual_investment_premium_1 = st.number_input("Enter Person 1's annual investment premium:", min_value=0.0,
                                                   step=100.0,
-                                                  value=st.session_state.profile_data["person_1"]["annual_investment_premium"])
+                                                  value=st.session_state.profile_data["person_1"][
+                                                      "annual_investment_premium"])
     annual_interest_rate_1 = st.number_input("Enter Person 1's annual interest rate (as a percentage):",
                                              min_value=0.0, step=0.1,
                                              value=st.session_state.profile_data["person_1"]["annual_interest_rate"])
-    existing_oa_1 = st.number_input("Enter Person 1's existing OA balance:", min_value=0.0, step=100.0,
+    existing_oa_1 = st.number_input("Enter Person 1's existing OA balance at starting age:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_1"]["existing_oa"])
-    existing_sa_1 = st.number_input("Enter Person 1's existing SA balance:", min_value=0.0, step=100.0,
+    existing_sa_1 = st.number_input("Enter Person 1's existing SA balance at starting age:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_1"]["existing_sa"])
-    existing_ma_1 = st.number_input("Enter Person 1's existing MA balance:", min_value=0.0, step=100.0,
+    existing_ma_1 = st.number_input("Enter Person 1's existing MA balance at starting age:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_1"]["existing_ma"])
-    existing_cash_1 = st.number_input("Enter Person 1's existing cash balance:", min_value=0.0, step=100.0,
+    existing_cash_1 = st.number_input("Enter Person 1's existing cash balance at starting age:", min_value=0.0, step=100.0,
                                       value=st.session_state.profile_data["person_1"]["existing_cash"])
-
     st.subheader("Financial Milestones for Person 1")
     num_milestones_1 = st.number_input("Enter the number of financial milestones for Person 1:", min_value=0, step=1)
     milestones_1 = {}
@@ -392,21 +410,24 @@ elif analysis_type == 'Couple':
                                   value=st.session_state.profile_data["person_2"]["start_age"])
     current_age_2 = st.number_input("Enter Person 2's current age:", min_value=0, step=1,
                                     value=st.session_state.profile_data["person_2"]["current_age"])
+    investment_start_age_2 = st.number_input("Enter Person 2's start age for annual investment premium:", min_value=0,
+                                             step=1,
+                                             value=st.session_state.profile_data["person_2"]["investment_start_age"])
     annual_investment_premium_2 = st.number_input("Enter Person 2's annual investment premium:", min_value=0.0,
                                                   step=100.0,
-                                                  value=st.session_state.profile_data["person_2"]["annual_investment_premium"])
+                                                  value=st.session_state.profile_data["person_2"][
+                                                      "annual_investment_premium"])
     annual_interest_rate_2 = st.number_input("Enter Person 2's annual interest rate (as a percentage):",
                                              min_value=0.0, step=0.1,
                                              value=st.session_state.profile_data["person_2"]["annual_interest_rate"])
-    existing_oa_2 = st.number_input("Enter Person 2's existing OA balance:", min_value=0.0, step=100.0,
+    existing_oa_2 = st.number_input("Enter Person 2's existing OA balance at starting age:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_2"]["existing_oa"])
-    existing_sa_2 = st.number_input("Enter Person 2's existing SA balance:", min_value=0.0, step=100.0,
+    existing_sa_2 = st.number_input("Enter Person 2's existing SA balance at starting age:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_2"]["existing_sa"])
-    existing_ma_2 = st.number_input("Enter Person 2's existing MA balance:", min_value=0.0, step=100.0,
+    existing_ma_2 = st.number_input("Enter Person 2's existing MA balance at starting age:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_2"]["existing_ma"])
-    existing_cash_2 = st.number_input("Enter Person 2's existing cash balance:", min_value=0.0, step=100.0,
+    existing_cash_2 = st.number_input("Enter Person 2's existing cash balance at starting age:", min_value=0.0, step=100.0,
                                       value=st.session_state.profile_data["person_2"]["existing_cash"])
-
     st.subheader("Financial Milestones for Person 2")
     num_milestones_2 = st.number_input("Enter the number of financial milestones for Person 2:", min_value=0, step=1)
     milestones_2 = {}
@@ -426,6 +447,7 @@ elif analysis_type == 'Couple':
         "monthly_expenses": monthly_expenses_1,
         "start_age": start_age_1,
         "current_age": current_age_1,
+        "investment_start_age": investment_start_age_1,
         "annual_investment_premium": annual_investment_premium_1,
         "annual_interest_rate": annual_interest_rate_1,
         "milestones": milestones_1,
@@ -441,6 +463,7 @@ elif analysis_type == 'Couple':
         "monthly_expenses": monthly_expenses_2,
         "start_age": start_age_2,
         "current_age": current_age_2,
+        "investment_start_age": investment_start_age_2,
         "annual_investment_premium": annual_investment_premium_2,
         "annual_interest_rate": annual_interest_rate_2,
         "milestones": milestones_2,
@@ -465,9 +488,9 @@ elif analysis_type == 'Couple':
             existing_oa=existing_oa_1,
             existing_sa=existing_sa_1,
             existing_ma=existing_ma_1,
-            existing_cash=existing_cash_1
+            existing_cash=existing_cash_1,
+            investment_start_age=investment_start_age_1
         )
-
         # Calculate CPF balance for Person 2
         cpf_balance_2 = calculate_cpf_balance(
             salary=salary_2,
@@ -482,16 +505,14 @@ elif analysis_type == 'Couple':
             existing_oa=existing_oa_2,
             existing_sa=existing_sa_2,
             existing_ma=existing_ma_2,
-            existing_cash=existing_cash_2
+            existing_cash=existing_cash_2,
+            investment_start_age=investment_start_age_2
         )
-
         # Convert results to DataFrames
         df_1 = pd.DataFrame(cpf_balance_1)
         df_2 = pd.DataFrame(cpf_balance_2)
-
         # Align financial data for combined analysis
         df_combined = align_financial_data(df_1, df_2, start_age_1, start_age_2)
-
         # Format DataFrames for better readability
         df_1_formatted = df_1.style.format({
             "Cumulative Cash Savings": "${:,.2f}",
@@ -503,7 +524,6 @@ elif analysis_type == 'Couple':
             "Investment Value": "${:,.2f}",
             "Net Worth": "${:,.2f}"
         })
-
         df_2_formatted = df_2.style.format({
             "Cumulative Cash Savings": "${:,.2f}",
             "Cumulative OA": "${:,.2f}",
@@ -514,7 +534,6 @@ elif analysis_type == 'Couple':
             "Investment Value": "${:,.2f}",
             "Net Worth": "${:,.2f}"
         })
-
         df_combined_formatted = df_combined.style.format({
             "Cumulative Cash Savings": "${:,.2f}",
             "Cumulative OA": "${:,.2f}",
@@ -525,24 +544,21 @@ elif analysis_type == 'Couple':
             "Investment Value": "${:,.2f}",
             "Net Worth": "${:,.2f}"
         })
-
         # Display individual financial analyses
         st.subheader("Person 1's Financial Analysis")
         st.write("\nIn-Depth Analysis for Person 1:")
         st.write(df_1_formatted)
-
         st.subheader("Person 2's Financial Analysis")
         st.write("\nIn-Depth Analysis for Person 2:")
         st.write(df_2_formatted)
-
         # Display combined financial analysis
         st.subheader("Combined Financial Analysis")
         st.write("\nIn-Depth Combined Analysis:")
         st.write(df_combined_formatted)
-
         # Plot Net Worth Over Time for Person 1
         fig_1 = go.Figure()
-        fig_1.add_trace(go.Scatter(x=df_1['Age'], y=df_1['Net Worth'], mode='lines+markers', name="Person 1's Net Worth"))
+        fig_1.add_trace(
+            go.Scatter(x=df_1['Age'], y=df_1['Net Worth'], mode='lines+markers', name="Person 1's Net Worth"))
         fig_1.update_layout(
             title="Person 1's Net Worth Over Time",
             xaxis_title="Age",
@@ -550,10 +566,10 @@ elif analysis_type == 'Couple':
             template="plotly_white"
         )
         st.plotly_chart(fig_1)
-
         # Plot Net Worth Over Time for Person 2
         fig_2 = go.Figure()
-        fig_2.add_trace(go.Scatter(x=df_2['Age'], y=df_2['Net Worth'], mode='lines+markers', name="Person 2's Net Worth"))
+        fig_2.add_trace(
+            go.Scatter(x=df_2['Age'], y=df_2['Net Worth'], mode='lines+markers', name="Person 2's Net Worth"))
         fig_2.update_layout(
             title="Person 2's Net Worth Over Time",
             xaxis_title="Age",
@@ -561,10 +577,10 @@ elif analysis_type == 'Couple':
             template="plotly_white"
         )
         st.plotly_chart(fig_2)
-
         # Plot Combined Net Worth Over Time
         fig_combined = go.Figure()
-        fig_combined.add_trace(go.Scatter(x=df_combined['Year'], y=df_combined['Net Worth'], mode='lines+markers', name="Combined Net Worth"))
+        fig_combined.add_trace(go.Scatter(x=df_combined['Year'], y=df_combined['Net Worth'], mode='lines+markers',
+                                          name="Combined Net Worth"))
         fig_combined.update_layout(
             title="Combined Net Worth Over Time",
             xaxis_title="Year",
