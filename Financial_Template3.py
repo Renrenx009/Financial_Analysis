@@ -360,51 +360,46 @@ if analysis_type == 'Single':
             st.write("\nIn-Depth Analysis for Person 1:")
             st.write(df_formatted)
 
-        # Beautified Summary Table
-        summary_data = {
-            "Metric": [
-                "Total Years Worked",
-                "Total CPF Contribution",
-                "Total Employee CPF Contribution",
-                "Total OA (Ordinary Account) Balance",
-                "Total SA (Special Account) Balance",
-                "Total MA (MediSave Account) Balance",
-                "Cumulative Cash Savings",
-                "Net Monthly Salary",
-                "Net Annual Salary",
-                "Total Investment Premium Paid",
-                "Total Investment Value",
-                "Net Worth"
-            ],
-            "Value": [
-                current_age - start_age,
-                sum(df['Cumulative Total CPF']),
-                sum(df['Cumulative Total CPF']) * 0.2,
-                df['Cumulative OA'].iloc[-1],
-                df['Cumulative SA'].iloc[-1],
-                df['Cumulative MA'].iloc[-1],
-                df['Cumulative Cash Savings'].iloc[-1],
-                (salary * 0.8) - monthly_expenses,
-                ((salary * 0.8) - monthly_expenses) * 12,
-                df['Cumulative Investment Premium'].iloc[-1],
-                df['Investment Value'].iloc[-1],
-                df['Net Worth'].iloc[-1]
-            ]
-        }
-        summary_df = pd.DataFrame(summary_data)
+            # Beautified Summary Table
+            summary_data = {
+                "Metric": [
+                    "Total Years Worked",
+                    "Total CPF Contribution",
+                    "Total Employee CPF Contribution",
+                    "Total OA (Ordinary Account) Balance",
+                    "Total SA (Special Account) Balance",
+                    "Total MA (MediSave Account) Balance",
+                    "Cumulative Cash Savings",
+                    "Net Monthly Salary",
+                    "Net Annual Salary",
+                    "Total Investment Premium Paid",
+                    "Total Investment Value",
+                    "Net Worth"
+                ],
+                "Value": [
+                    current_age - start_age,
+                    "${:,.2f}".format(sum(df['Cumulative Total CPF'])),
+                    "${:,.2f}".format(sum(df['Cumulative Total CPF']) * 0.2),
+                    "${:,.2f}".format(df['Cumulative OA'].iloc[-1]),
+                    "${:,.2f}".format(df['Cumulative SA'].iloc[-1]),
+                    "${:,.2f}".format(df['Cumulative MA'].iloc[-1]),
+                    "${:,.2f}".format(df['Cumulative Cash Savings'].iloc[-1]),
+                    "${:,.2f}".format((salary * 0.8) - monthly_expenses),
+                    "${:,.2f}".format(((salary * 0.8) - monthly_expenses) * 12),
+                    "${:,.2f}".format(df['Cumulative Investment Premium'].iloc[-1]),
+                    "${:,.2f}".format(df['Investment Value'].iloc[-1]),
+                    "${:,.2f}".format(df['Net Worth'].iloc[-1])
+                ]
+            }
+            summary_df = pd.DataFrame(summary_data)
+            st.table(summary_df)
 
-        # Format the summary table for display
-        summary_df_display = summary_df.copy()
-        summary_df_display['Value'] = summary_df_display['Value'].apply(lambda x: "${:,.2f}".format(x) if isinstance(x, (int, float)) else x)
-
-        st.table(summary_df_display)
-
-        # Plot Net Worth Over Time
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=df['Age'], y=df['Net Worth'], mode='lines+markers', name='Net Worth'))
-        fig.update_layout(title="Person 1's Net Worth Over Time", xaxis_title='Age', yaxis_title='Amount ($)',
-                          template='plotly_white')
-        st.plotly_chart(fig)
+            # Plot Net Worth Over Time
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=df['Age'], y=df['Net Worth'], mode='lines+markers', name='Net Worth'))
+            fig.update_layout(title="Person 1's Net Worth Over Time", xaxis_title='Age', yaxis_title='Amount ($)',
+                              template='plotly_white')
+            st.plotly_chart(fig)
 
 elif analysis_type == 'Couple':
     # Person 1 inputs
@@ -626,37 +621,28 @@ elif analysis_type == 'Couple':
                 ],
                 "Value": [
                     current_age_1 - start_age_1,
-                    sum(df_1['Cumulative Total CPF']),
-                    sum(df_1['Cumulative Total CPF']) * 0.2,
-                    df_1['Cumulative OA'].iloc[-1],
-                    df_1['Cumulative SA'].iloc[-1],
-                    df_1['Cumulative MA'].iloc[-1],
-                    df_1['Cumulative Cash Savings'].iloc[-1],
-                    (salary_1 * 0.8) - monthly_expenses_1,
-                    ((salary_1 * 0.8) - monthly_expenses_1) * 12,
-                    df_1['Cumulative Investment Premium'].iloc[-1],
-                    df_1['Investment Value'].iloc[-1],
-                    df_1['Net Worth'].iloc[-1]
+                    "${:,.2f}".format(sum(df_1['Cumulative Total CPF'])),
+                    "${:,.2f}".format(sum(df_1['Cumulative Total CPF']) * 0.2),
+                    "${:,.2f}".format(df_1['Cumulative OA'].iloc[-1]),
+                    "${:,.2f}".format(df_1['Cumulative SA'].iloc[-1]),
+                    "${:,.2f}".format(df_1['Cumulative MA'].iloc[-1]),
+                    "${:,.2f}".format(df_1['Cumulative Cash Savings'].iloc[-1]),
+                    "${:,.2f}".format((salary_1 * 0.8) - monthly_expenses_1),
+                    "${:,.2f}".format(((salary_1 * 0.8) - monthly_expenses_1) * 12),
+                    "${:,.2f}".format(df_1['Cumulative Investment Premium'].iloc[-1]),
+                    "${:,.2f}".format(df_1['Investment Value'].iloc[-1]),
+                    "${:,.2f}".format(df_1['Net Worth'].iloc[-1])
                 ]
             }
             summary_df_1 = pd.DataFrame(summary_data_1)
-
-            # Format the summary table for display
-            summary_df_1_display = summary_df_1.copy()
-            summary_df_1_display['Value'] = summary_df_1_display['Value'].apply(
-                lambda x: "${:,.2f}".format(x) if isinstance(x, (int, float)) else x
-            )
-            st.table(summary_df_1_display)
+            st.table(summary_df_1)
 
             # Plot Net Worth for Person 1
             fig_person_1 = go.Figure()
             fig_person_1.add_trace(
-                go.Scatter(x=df_1['Age'], y=df_1['Net Worth'], mode='lines+markers', name="Person 1's Net Worth")
-            )
-            fig_person_1.update_layout(
-                title="Person 1's Net Worth Over Time", xaxis_title='Age',
-                yaxis_title='Amount ($)', template='plotly_white'
-            )
+                go.Scatter(x=df_1['Age'], y=df_1['Net Worth'], mode='lines+markers', name="Person 1's Net Worth"))
+            fig_person_1.update_layout(title="Person 1's Net Worth Over Time", xaxis_title='Age',
+                                       yaxis_title='Amount ($)', template='plotly_white')
             st.plotly_chart(fig_person_1)
 
         with st.expander("Person 2's Full Analysis"):
@@ -681,40 +667,31 @@ elif analysis_type == 'Couple':
                 ],
                 "Value": [
                     current_age_2 - start_age_2,
-                    sum(df_2['Cumulative Total CPF']),
-                    sum(df_2['Cumulative Total CPF']) * 0.2,
-                    df_2['Cumulative OA'].iloc[-1],
-                    df_2['Cumulative SA'].iloc[-1],
-                    df_2['Cumulative MA'].iloc[-1],
-                    df_2['Cumulative Cash Savings'].iloc[-1],
-                    (salary_2 * 0.8) - monthly_expenses_2,
-                    ((salary_2 * 0.8) - monthly_expenses_2) * 12,
-                    df_2['Cumulative Investment Premium'].iloc[-1],
-                    df_2['Investment Value'].iloc[-1],
-                    df_2['Net Worth'].iloc[-1]
+                    "${:,.2f}".format(sum(df_2['Cumulative Total CPF'])),
+                    "${:,.2f}".format(sum(df_2['Cumulative Total CPF']) * 0.2),
+                    "${:,.2f}".format(df_2['Cumulative OA'].iloc[-1]),
+                    "${:,.2f}".format(df_2['Cumulative SA'].iloc[-1]),
+                    "${:,.2f}".format(df_2['Cumulative MA'].iloc[-1]),
+                    "${:,.2f}".format(df_2['Cumulative Cash Savings'].iloc[-1]),
+                    "${:,.2f}".format((salary_2 * 0.8) - monthly_expenses_2),
+                    "${:,.2f}".format(((salary_2 * 0.8) - monthly_expenses_2) * 12),
+                    "${:,.2f}".format(df_2['Cumulative Investment Premium'].iloc[-1]),
+                    "${:,.2f}".format(df_2['Investment Value'].iloc[-1]),
+                    "${:,.2f}".format(df_2['Net Worth'].iloc[-1])
                 ]
             }
             summary_df_2 = pd.DataFrame(summary_data_2)
-
-            # Format the summary table for display
-            summary_df_2_display = summary_df_2.copy()
-            summary_df_2_display['Value'] = summary_df_2_display['Value'].apply(
-                lambda x: "${:,.2f}".format(x) if isinstance(x, (int, float)) else x
-            )
-            st.table(summary_df_2_display)
+            st.table(summary_df_2)
 
             # Plot Net Worth for Person 2
             fig_person_2 = go.Figure()
             fig_person_2.add_trace(
-                go.Scatter(x=df_2['Age'], y=df_2['Net Worth'], mode='lines+markers', name="Person 2's Net Worth")
-            )
-            fig_person_2.update_layout(
-                title="Person 2's Net Worth Over Time", xaxis_title='Age',
-                yaxis_title='Amount ($)', template='plotly_white'
-            )
+                go.Scatter(x=df_2['Age'], y=df_2['Net Worth'], mode='lines+markers', name="Person 2's Net Worth"))
+            fig_person_2.update_layout(title="Person 2's Net Worth Over Time", xaxis_title='Age',
+                                       yaxis_title='Amount ($)', template='plotly_white')
             st.plotly_chart(fig_person_2)
 
-            # Combined Financial Analysis
+        # Combined Financial Analysis
         with st.expander("Combined Financial Analysis"):
             st.write("\nCombined Financial Analysis:")
             st.write(df_combined_formatted)
@@ -752,36 +729,27 @@ elif analysis_type == 'Couple':
                 ],
                 "Value": [
                     total_years_worked_combined,
-                    total_cpf_contribution_combined,
-                    total_employee_contribution_combined,
-                    total_oa_combined,
-                    total_sa_combined,
-                    total_ma_combined,
-                    cumulative_cash_savings_combined,
-                    net_monthly_salary_combined,
-                    net_annual_salary_combined,
-                    total_investment_premium_paid_combined,
-                    investment_value_combined,
-                    net_worth_combined
+                    "${:,.2f}".format(total_cpf_contribution_combined),
+                    "${:,.2f}".format(total_employee_contribution_combined),
+                    "${:,.2f}".format(total_oa_combined),
+                    "${:,.2f}".format(total_sa_combined),
+                    "${:,.2f}".format(total_ma_combined),
+                    "${:,.2f}".format(cumulative_cash_savings_combined),
+                    "${:,.2f}".format(net_monthly_salary_combined),
+                    "${:,.2f}".format(net_annual_salary_combined),
+                    "${:,.2f}".format(total_investment_premium_paid_combined),
+                    "${:,.2f}".format(investment_value_combined),
+                    "${:,.2f}".format(net_worth_combined)
                 ]
             }
+
             summary_df_combined = pd.DataFrame(summary_data_combined)
+            st.table(summary_df_combined)
 
-            # Format the summary table for display
-            summary_df_combined_display = summary_df_combined.copy()
-            summary_df_combined_display['Value'] = summary_df_combined_display['Value'].apply(
-                lambda x: "${:,.2f}".format(x) if isinstance(x, (int, float)) else x
-            )
-            st.table(summary_df_combined_display)
-
-            # Plot Combined Net Worth
+            # Plot Combined Net Worth (Shifted below the metrics table)
             fig_combined = go.Figure()
-            fig_combined.add_trace(
-                go.Scatter(x=df_combined['Age'], y=df_combined['Net Worth'], mode='lines+markers',
-                           name="Combined Net Worth")
-            )
-            fig_combined.update_layout(
-                title="Combined Net Worth Over Time", xaxis_title='Age',
-                yaxis_title='Amount ($)', template='plotly_white'
-            )
+            fig_combined.add_trace(go.Scatter(x=df_combined['Age'], y=df_combined['Net Worth'], mode='lines+markers',
+                                              name="Combined Net Worth"))
+            fig_combined.update_layout(title="Combined Net Worth Over Time", xaxis_title='Age',
+                                       yaxis_title='Amount ($)', template='plotly_white')
             st.plotly_chart(fig_combined)
