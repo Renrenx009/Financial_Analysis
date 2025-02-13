@@ -27,6 +27,7 @@ def delete_profile(profile_name):
     if os.path.exists(f"profiles/{profile_name}.json"):
         os.remove(f"profiles/{profile_name}.json")
 
+# CPF allocation rates based on age
 def get_cpf_allocation_rates(age):
     if age <= 35:
         return 0.6217, 0.1621, 0.2162
@@ -45,6 +46,7 @@ def get_cpf_allocation_rates(age):
     else:
         return 0.08, 0.08, 0.84
 
+# CPF contribution rates based on age
 def get_cpf_rates(age):
     if age <= 55:
         return 0.17, 0.20, 0.37
@@ -73,6 +75,7 @@ def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, sta
     cumulative_ma = existing_ma
     cumulative_investment_premium = investment_value = 0
     net_worth = 0
+
     for year in range(years_worked):
         age = start_age + year
         oa_rate, sa_rate, ma_rate = get_cpf_allocation_rates(age)
@@ -83,20 +86,24 @@ def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, sta
         net_annual_salary = (net_monthly_salary * 12) + (bonus * (1 - employee_rate)) + (
             thirteenth_month * (1 - employee_rate))
         cumulative_cash_savings += net_annual_salary
+
         # Apply annual investment premium only after the investment start age
         if age >= investment_start_age:
             cumulative_cash_savings -= annual_investment_premium
             cumulative_investment_premium += annual_investment_premium
             investment_value = (investment_value + annual_investment_premium) * (1 + annual_interest_rate / 100)
+
         cumulative_oa += cpf_contribution * oa_rate
         cumulative_sa += cpf_contribution * sa_rate
         cumulative_ma += cpf_contribution * ma_rate
         cumulative_total_cpf = cumulative_oa + cumulative_sa + cumulative_ma
         net_worth = cumulative_cash_savings + cumulative_oa + cumulative_sa + investment_value
+
         # Apply financial milestones
         if age in milestones:
             net_worth += milestones[age] * milestone_percentage
             cumulative_cash_savings += milestones[age] * milestone_percentage  # Ensure the effect is permanent
+
         cpf_balance['Year'].append(year + 1)
         cpf_balance['Age'].append(age)
         cpf_balance['Cumulative Cash Savings'].append(round(cumulative_cash_savings, 2))
@@ -107,13 +114,13 @@ def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, sta
         cpf_balance['Cumulative Investment Premium'].append(round(cumulative_investment_premium, 2))
         cpf_balance['Investment Value'].append(round(investment_value, 2))
         cpf_balance['Net Worth'].append(round(net_worth, 2))
+
     return cpf_balance
 
+# Align financial data for combined analysis
 def align_financial_data(df1, df2, start_age_1, start_age_2):
-    # Determine the age range for alignment
     min_age = min(start_age_1, start_age_2)
     max_age = max(df1['Age'].iloc[-1], df2['Age'].iloc[-1])
-    # Create a new DataFrame to hold the combined data
     combined_data = {
         'Year': list(range(1, max_age - min_age + 2)),
         'Cumulative Cash Savings': [],
@@ -125,7 +132,7 @@ def align_financial_data(df1, df2, start_age_1, start_age_2):
         'Investment Value': [],
         'Net Worth': []
     }
-    # Initialize financial values
+
     cumulative_cash_savings_1 = cumulative_cash_savings_2 = 0
     cumulative_oa_1 = cumulative_oa_2 = 0
     cumulative_sa_1 = cumulative_sa_2 = 0
@@ -134,6 +141,7 @@ def align_financial_data(df1, df2, start_age_1, start_age_2):
     cumulative_investment_premium_1 = cumulative_investment_premium_2 = 0
     investment_value_1 = investment_value_2 = 0
     net_worth_1 = net_worth_2 = 0
+
     for year in combined_data['Year']:
         age = min_age + year - 1
         if age in df1['Age'].values:
@@ -146,6 +154,7 @@ def align_financial_data(df1, df2, start_age_1, start_age_2):
             cumulative_investment_premium_1 = df1['Cumulative Investment Premium'].iloc[idx]
             investment_value_1 = df1['Investment Value'].iloc[idx]
             net_worth_1 = df1['Net Worth'].iloc[idx]
+
         if age in df2['Age'].values:
             idx = df2['Age'].values.tolist().index(age)
             cumulative_cash_savings_2 = df2['Cumulative Cash Savings'].iloc[idx]
@@ -156,6 +165,7 @@ def align_financial_data(df1, df2, start_age_1, start_age_2):
             cumulative_investment_premium_2 = df2['Cumulative Investment Premium'].iloc[idx]
             investment_value_2 = df2['Investment Value'].iloc[idx]
             net_worth_2 = df2['Net Worth'].iloc[idx]
+
         combined_data['Cumulative Cash Savings'].append(cumulative_cash_savings_1 + cumulative_cash_savings_2)
         combined_data['Cumulative OA'].append(cumulative_oa_1 + cumulative_oa_2)
         combined_data['Cumulative SA'].append(cumulative_sa_1 + cumulative_sa_2)
@@ -165,6 +175,7 @@ def align_financial_data(df1, df2, start_age_1, start_age_2):
             cumulative_investment_premium_1 + cumulative_investment_premium_2)
         combined_data['Investment Value'].append(investment_value_1 + investment_value_2)
         combined_data['Net Worth'].append(net_worth_1 + net_worth_2)
+
     return pd.DataFrame(combined_data)
 
 # Streamlit App
@@ -216,13 +227,13 @@ if st.session_state.profile_data["analysis_type"] == "Couple":
 # Profile Management
 st.sidebar.header("Profile Management")
 profile_action = st.sidebar.radio("Profile Action", ["Create New Profile", "Load Existing Profile", "Delete Profile"])
+
 if profile_action == "Create New Profile":
     profile_name = st.sidebar.text_input("Enter a name for your profile:")
     if st.sidebar.button("Save Profile"):
         if not profile_name:
             st.sidebar.error("Please enter a profile name.")
         else:
-            # Save the current input data as a profile
             profile_data = {
                 "analysis_type": st.session_state.profile_data["analysis_type"],
                 "person_1": st.session_state.profile_data["person_1"]
@@ -231,6 +242,7 @@ if profile_action == "Create New Profile":
                 profile_data["person_2"] = st.session_state.profile_data["person_2"]
             save_profile(profile_name, profile_data)
             st.sidebar.success(f"Profile '{profile_name}' saved successfully!")
+
 elif profile_action == "Load Existing Profile":
     profiles = list_profiles()
     if not profiles:
@@ -245,6 +257,7 @@ elif profile_action == "Load Existing Profile":
                 "person_2": profile_data.get("person_2", {}) if profile_data.get("analysis_type") == "Couple" else {}
             }
             st.sidebar.success(f"Profile '{selected_profile}' loaded successfully!")
+
 elif profile_action == "Delete Profile":
     profiles = list_profiles()
     if not profiles:
@@ -342,9 +355,57 @@ if analysis_type == 'Single':
                                             existing_ma=existing_ma, existing_cash=existing_cash,
                                             investment_start_age=investment_start_age)
         df = pd.DataFrame(cpf_balance)
-        # Display Results
-        st.write("\nIn-Depth Analysis:")
-        st.write(df)
+
+        # Format DataFrame for better readability
+        df_formatted = df.style.format({
+            "Cumulative Cash Savings": "${:,.2f}",
+            "Cumulative OA": "${:,.2f}",
+            "Cumulative SA": "${:,.2f}",
+            "Cumulative MA": "${:,.2f}",
+            "Cumulative Total CPF": "${:,.2f}",
+            "Cumulative Investment Premium": "${:,.2f}",
+            "Investment Value": "${:,.2f}",
+            "Net Worth": "${:,.2f}"
+        })
+
+        # Display Results in a collapsible section
+        with st.expander("In-Depth Analysis"):
+            st.write(df_formatted)
+
+            # Beautified Summary Table
+            summary_data = {
+                "Metric": [
+                    "Total Years Worked",
+                    "Total CPF Contribution",
+                    "Total Employee CPF Contribution",
+                    "Total OA (Ordinary Account) Balance",
+                    "Total SA (Special Account) Balance",
+                    "Total MA (MediSave Account) Balance",
+                    "Cumulative Cash Savings",
+                    "Net Monthly Salary",
+                    "Net Annual Salary",
+                    "Total Investment Premium Paid",
+                    "Total Investment Value",
+                    "Net Worth"
+                ],
+                "Value": [
+                    current_age - start_age,
+                    "${:,.2f}".format(sum(df['Cumulative Total CPF'])),
+                    "${:,.2f}".format(sum(df['Cumulative Total CPF']) * 0.2),
+                    "${:,.2f}".format(df['Cumulative OA'].iloc[-1]),
+                    "${:,.2f}".format(df['Cumulative SA'].iloc[-1]),
+                    "${:,.2f}".format(df['Cumulative MA'].iloc[-1]),
+                    "${:,.2f}".format(df['Cumulative Cash Savings'].iloc[-1]),
+                    "${:,.2f}".format((salary * 0.8) - monthly_expenses),
+                    "${:,.2f}".format(((salary * 0.8) - monthly_expenses) * 12),
+                    "${:,.2f}".format(df['Cumulative Investment Premium'].iloc[-1]),
+                    "${:,.2f}".format(df['Investment Value'].iloc[-1]),
+                    "${:,.2f}".format(df['Net Worth'].iloc[-1])
+                ]
+            }
+            summary_df = pd.DataFrame(summary_data)
+            st.table(summary_df)
+
         # Plot Net Worth Over Time
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df['Age'], y=df['Net Worth'], mode='lines+markers', name='Net Worth'))
@@ -384,7 +445,7 @@ elif analysis_type == 'Couple':
     existing_ma_1 = st.number_input("Enter Person 1's existing MA balance at starting age:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_1"]["existing_ma"])
     existing_cash_1 = st.number_input("Enter Person 1's existing cash balance at starting age:", min_value=0.0, step=100.0,
-                                      value=st.session_state.profile_data["person_1"]["existing_cash"])
+                                     value=st.session_state.profile_data["person_1"]["existing_cash"])
     st.subheader("Financial Milestones for Person 1")
     num_milestones_1 = st.number_input("Enter the number of financial milestones for Person 1:", min_value=0, step=1)
     milestones_1 = {}
@@ -508,11 +569,14 @@ elif analysis_type == 'Couple':
             existing_cash=existing_cash_2,
             investment_start_age=investment_start_age_2
         )
+
         # Convert results to DataFrames
         df_1 = pd.DataFrame(cpf_balance_1)
         df_2 = pd.DataFrame(cpf_balance_2)
+
         # Align financial data for combined analysis
         df_combined = align_financial_data(df_1, df_2, start_age_1, start_age_2)
+
         # Format DataFrames for better readability
         df_1_formatted = df_1.style.format({
             "Cumulative Cash Savings": "${:,.2f}",
@@ -544,47 +608,133 @@ elif analysis_type == 'Couple':
             "Investment Value": "${:,.2f}",
             "Net Worth": "${:,.2f}"
         })
-        # Display individual financial analyses
-        st.subheader("Person 1's Financial Analysis")
-        st.write("\nIn-Depth Analysis for Person 1:")
-        st.write(df_1_formatted)
-        st.subheader("Person 2's Financial Analysis")
-        st.write("\nIn-Depth Analysis for Person 2:")
-        st.write(df_2_formatted)
-        # Display combined financial analysis
-        st.subheader("Combined Financial Analysis")
-        st.write("\nIn-Depth Combined Analysis:")
-        st.write(df_combined_formatted)
-        # Plot Net Worth Over Time for Person 1
-        fig_1 = go.Figure()
-        fig_1.add_trace(
-            go.Scatter(x=df_1['Age'], y=df_1['Net Worth'], mode='lines+markers', name="Person 1's Net Worth"))
-        fig_1.update_layout(
-            title="Person 1's Net Worth Over Time",
-            xaxis_title="Age",
-            yaxis_title="Net Worth ($)",
-            template="plotly_white"
-        )
-        st.plotly_chart(fig_1)
-        # Plot Net Worth Over Time for Person 2
-        fig_2 = go.Figure()
-        fig_2.add_trace(
-            go.Scatter(x=df_2['Age'], y=df_2['Net Worth'], mode='lines+markers', name="Person 2's Net Worth"))
-        fig_2.update_layout(
-            title="Person 2's Net Worth Over Time",
-            xaxis_title="Age",
-            yaxis_title="Net Worth ($)",
-            template="plotly_white"
-        )
-        st.plotly_chart(fig_2)
-        # Plot Combined Net Worth Over Time
-        fig_combined = go.Figure()
-        fig_combined.add_trace(go.Scatter(x=df_combined['Year'], y=df_combined['Net Worth'], mode='lines+markers',
-                                          name="Combined Net Worth"))
-        fig_combined.update_layout(
-            title="Combined Net Worth Over Time",
-            xaxis_title="Year",
-            yaxis_title="Net Worth ($)",
-            template="plotly_white"
-        )
-        st.plotly_chart(fig_combined)
+
+        # Display individual financial analyses in collapsible sections
+        with st.expander("Person 1's In-Depth Financial Analysis"):
+            st.write("\nIn-Depth Analysis for Person 1:")
+            st.write(df_1_formatted)
+
+            # Beautified Summary Table for Person 1
+            summary_data_1 = {
+                "Metric": [
+                    "Total Years Worked",
+                    "Total CPF Contribution",
+                    "Total Employee CPF Contribution",
+                    "Total OA (Ordinary Account) Balance",
+                    "Total SA (Special Account) Balance",
+                    "Total MA (MediSave Account) Balance",
+                    "Cumulative Cash Savings",
+                    "Net Monthly Salary",
+                    "Net Annual Salary",
+                    "Total Investment Premium Paid",
+                    "Total Investment Value",
+                    "Net Worth"
+                ],
+                "Value": [
+                    current_age_1 - start_age_1,
+                    "${:,.2f}".format(sum(df_1['Cumulative Total CPF'])),
+                    "${:,.2f}".format(sum(df_1['Cumulative Total CPF']) * 0.2),
+                    "${:,.2f}".format(df_1['Cumulative OA'].iloc[-1]),
+                    "${:,.2f}".format(df_1['Cumulative SA'].iloc[-1]),
+                    "${:,.2f}".format(df_1['Cumulative MA'].iloc[-1]),
+                    "${:,.2f}".format(df_1['Cumulative Cash Savings'].iloc[-1]),
+                    "${:,.2f}".format((salary_1 * 0.8) - monthly_expenses_1),
+                    "${:,.2f}".format(((salary_1 * 0.8) - monthly_expenses_1) * 12),
+                    "${:,.2f}".format(df_1['Cumulative Investment Premium'].iloc[-1]),
+                    "${:,.2f}".format(df_1['Investment Value'].iloc[-1]),
+                    "${:,.2f}".format(df_1['Net Worth'].iloc[-1])
+                ]
+            }
+            summary_df_1 = pd.DataFrame(summary_data_1)
+            st.table(summary_df_1)
+
+        with st.expander("Person 2's In-Depth Financial Analysis"):
+            st.write("\nIn-Depth Analysis for Person 2:")
+            st.write(df_2_formatted)
+
+            # Beautified Summary Table for Person 2
+            summary_data_2 = {
+                "Metric": [
+                    "Total Years Worked",
+                    "Total CPF Contribution",
+                    "Total Employee CPF Contribution",
+                    "Total OA (Ordinary Account) Balance",
+                    "Total SA (Special Account) Balance",
+                    "Total MA (MediSave Account) Balance",
+                    "Cumulative Cash Savings",
+                    "Net Monthly Salary",
+                    "Net Annual Salary",
+                    "Total Investment Premium Paid",
+                    "Total Investment Value",
+                    "Net Worth"
+                ],
+                "Value": [
+                    total_years_worked_2,
+                    "${:,.2f}".format(total_cpf_contribution_2),
+                    "${:,.2f}".format(total_employee_contribution_2),
+                    "${:,.2f}".format(total_oa_2),
+                    "${:,.2f}".format(total_sa_2),
+                    "${:,.2f}".format(total_ma_2),
+                    "${:,.2f}".format(cumulative_cash_savings_2),
+                    "${:,.2f}".format(net_monthly_salary_2),
+                    "${:,.2f}".format(net_annual_salary_2),
+                    "${:,.2f}".format(total_investment_premium_paid_2),
+                    "${:,.2f}".format(investment_value_2),
+                    "${:,.2f}".format(net_worth_2)
+                ]
+            }
+            summary_df_2 = pd.DataFrame(summary_data_2)
+
+            with st.expander("Person 2's Summary"):
+                st.table(summary_df_2)
+
+            # Beautified Summary Table for Combined Analysis
+            total_years_worked_combined = max(current_age_1 - start_age_1, current_age_2 - start_age_2)
+            total_cpf_contribution_combined = total_cpf_contribution_1 + total_cpf_contribution_2
+            total_employee_contribution_combined = total_cpf_contribution_combined * 0.2
+            total_oa_combined = total_oa_1 + total_oa_2
+            total_sa_combined = total_sa_1 + total_sa_2
+            total_ma_combined = total_ma_1 + total_ma_2
+            cumulative_cash_savings_combined = df_combined['Cumulative Cash Savings'].iloc[-1]
+            net_monthly_salary_combined = ((salary_1 + salary_2) * 0.8) - (monthly_expenses_1 + monthly_expenses_2)
+            net_annual_salary_combined = net_monthly_salary_combined * 12
+            total_investment_premium_paid_combined = (
+                    total_investment_premium_paid_1 + total_investment_premium_paid_2
+            )
+            investment_value_combined = investment_value_1 + investment_value_2
+            net_worth_combined = df_combined['Net Worth'].iloc[-1]
+
+            summary_data_combined = {
+                "Metric": [
+                    "Total Years Worked",
+                    "Total CPF Contribution",
+                    "Total Employee CPF Contribution",
+                    "Total OA (Ordinary Account) Balance",
+                    "Total SA (Special Account) Balance",
+                    "Total MA (MediSave Account) Balance",
+                    "Cumulative Cash Savings",
+                    "Net Monthly Salary",
+                    "Net Annual Salary",
+                    "Total Investment Premium Paid",
+                    "Total Investment Value",
+                    "Net Worth"
+                ],
+                "Value": [
+                    total_years_worked_combined,
+                    "${:,.2f}".format(total_cpf_contribution_combined),
+                    "${:,.2f}".format(total_employee_contribution_combined),
+                    "${:,.2f}".format(total_oa_combined),
+                    "${:,.2f}".format(total_sa_combined),
+                    "${:,.2f}".format(total_ma_combined),
+                    "${:,.2f}".format(cumulative_cash_savings_combined),
+                    "${:,.2f}".format(net_monthly_salary_combined),
+                    "${:,.2f}".format(net_annual_salary_combined),
+                    "${:,.2f}".format(total_investment_premium_paid_combined),
+                    "${:,.2f}".format(investment_value_combined),
+                    "${:,.2f}".format(net_worth_combined)
+                ]
+            }
+            summary_df_combined = pd.DataFrame(summary_data_combined)
+
+            with st.expander("Combined Summary"):
+                st.table(summary_df_combined)
