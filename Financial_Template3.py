@@ -360,51 +360,54 @@ if analysis_type == 'Single':
             st.write("\nIn-Depth Analysis for Person 1:")
             st.write(df_formatted)
 
-        # Beautified Summary Table
-        summary_data = {
-            "Metric": [
-                "Total Years Worked",
-                "Total CPF Contribution",
-                "Total Employee CPF Contribution",
-                "Total OA (Ordinary Account) Balance",
-                "Total SA (Special Account) Balance",
-                "Total MA (MediSave Account) Balance",
-                "Cumulative Cash Savings",
-                "Net Monthly Salary",
-                "Net Annual Salary",
-                "Total Investment Premium Paid",
-                "Total Investment Value",
-                "Net Worth"
-            ],
-            "Value": [
-                current_age - start_age,
-                sum(df['Cumulative Total CPF']),
-                sum(df['Cumulative Total CPF']) * 0.2,
-                df['Cumulative OA'].iloc[-1],
-                df['Cumulative SA'].iloc[-1],
-                df['Cumulative MA'].iloc[-1],
-                df['Cumulative Cash Savings'].iloc[-1],
-                (salary * 0.8) - monthly_expenses,
-                ((salary * 0.8) - monthly_expenses) * 12,
-                df['Cumulative Investment Premium'].iloc[-1],
-                df['Investment Value'].iloc[-1],
-                df['Net Worth'].iloc[-1]
-            ]
-        }
-        summary_df = pd.DataFrame(summary_data)
+            # Beautified Summary Table
+            summary_data = {
+                "Metric": [
+                    "Total Years Worked",
+                    "Total CPF Contribution",
+                    "Total Employee CPF Contribution",
+                    "Total OA (Ordinary Account) Balance",
+                    "Total SA (Special Account) Balance",
+                    "Total MA (MediSave Account) Balance",
+                    "Cumulative Cash Savings",
+                    "Net Monthly Salary",
+                    "Net Annual Salary",
+                    "Total Investment Premium Paid",
+                    "Total Investment Value",
+                    "Net Worth"
+                ],
+                "Value": [
+                    current_age - start_age,
+                    sum(df['Cumulative Total CPF']),
+                    sum(df['Cumulative Total CPF']) * 0.2,
+                    df['Cumulative OA'].iloc[-1],
+                    df['Cumulative SA'].iloc[-1],
+                    df['Cumulative MA'].iloc[-1],
+                    df['Cumulative Cash Savings'].iloc[-1],
+                    (salary * 0.8) - monthly_expenses,
+                    ((salary * 0.8) - monthly_expenses) * 12,
+                    df['Cumulative Investment Premium'].iloc[-1],
+                    df['Investment Value'].iloc[-1],
+                    df['Net Worth'].iloc[-1]
+                ]
+            }
+            summary_df = pd.DataFrame(summary_data)
 
-        # Format the summary table for display
-        summary_df_display = summary_df.copy()
-        summary_df_display['Value'] = summary_df_display['Value'].apply(lambda x: "${:,.2f}".format(x) if isinstance(x, (int, float)) else x)
+            # Format the summary table for display
+            summary_df_display = summary_df.copy()
+            summary_df_display['Value'] = summary_df_display['Value'].apply(
+                lambda x: "${:,.2f}".format(x) if isinstance(x, (int, float)) else x)
 
-        st.table(summary_df_display)
+            st.table(summary_df_display)
 
-        # Plot Net Worth Over Time
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=df['Age'], y=df['Net Worth'], mode='lines+markers', name='Net Worth'))
-        fig.update_layout(title="Person 1's Net Worth Over Time", xaxis_title='Age', yaxis_title='Amount ($)',
-                          template='plotly_white')
-        st.plotly_chart(fig)
+            # Plot Net Worth Over Time
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=df['Age'], y=df['Net Worth'], mode='lines+markers', name='Net Worth'))
+            fig.update_layout(title="Person 1's Net Worth Over Time", xaxis_title='Age', yaxis_title='Amount ($)',
+                              template='plotly_white')
+            st.plotly_chart(fig)
+
+
 
 elif analysis_type == 'Couple':
     # Person 1 inputs
@@ -785,92 +788,3 @@ elif analysis_type == 'Couple':
                 yaxis_title='Amount ($)', template='plotly_white'
             )
             st.plotly_chart(fig_combined)
-# Additional Features: Export Data Option
-st.subheader("Export Analysis Results")
-export_option = st.radio("Would you like to export the analysis results?", ('No', 'Yes'))
-if export_option == 'Yes':
-    export_format = st.selectbox("Select the export format:", ('CSV', 'Excel'))
-    if st.button("Export"):
-        if export_format == 'CSV':
-            # Export individual and combined data as CSV
-            df_1.to_csv("person_1_analysis.csv", index=False)
-            df_2.to_csv("person_2_analysis.csv", index=False)
-            df_combined.to_csv("combined_analysis.csv", index=False)
-            st.success("Analysis results exported successfully as CSV files!")
-        elif export_format == 'Excel':
-            # Export individual and combined data as Excel
-            with pd.ExcelWriter("financial_analysis.xlsx", engine='xlsxwriter') as writer:
-                df_1.to_excel(writer, sheet_name="Person 1 Analysis", index=False)
-                df_2.to_excel(writer, sheet_name="Person 2 Analysis", index=False)
-                df_combined.to_excel(writer, sheet_name="Combined Analysis", index=False)
-            st.success("Analysis results exported successfully as an Excel file!")
-
-# Additional Features: Sensitivity Analysis
-st.subheader("Sensitivity Analysis")
-st.write("Perform a sensitivity analysis by adjusting key parameters such as salary, expenses, or investment premium.")
-sensitivity_option = st.radio("Would you like to perform a sensitivity analysis?", ('No', 'Yes'))
-if sensitivity_option == 'Yes':
-    parameter_to_adjust = st.selectbox("Select the parameter to adjust:", (
-        "Salary", "Monthly Expenses", "Annual Investment Premium", "Annual Interest Rate"))
-    adjustment_percentage = st.slider("Adjustment Percentage (%)", -50, 50, 0, 5)
-
-    if parameter_to_adjust == "Salary":
-        adjusted_salary_1 = salary_1 * (1 + adjustment_percentage / 100)
-        adjusted_salary_2 = salary_2 * (1 + adjustment_percentage / 100)
-        cpf_balance_1_adjusted = calculate_cpf_balance(
-            salary=adjusted_salary_1,
-            bonus=bonus_1,
-            thirteenth_month=thirteenth_month_1,
-            monthly_expenses=monthly_expenses_1,
-            start_age=start_age_1,
-            current_age=current_age_1,
-            annual_investment_premium=annual_investment_premium_1,
-            annual_interest_rate=annual_interest_rate_1,
-            milestones=milestones_1,
-            existing_oa=existing_oa_1,
-            existing_sa=existing_sa_1,
-            existing_ma=existing_ma_1,
-            existing_cash=existing_cash_1,
-            investment_start_age=investment_start_age_1
-        )
-        cpf_balance_2_adjusted = calculate_cpf_balance(
-            salary=adjusted_salary_2,
-            bonus=bonus_2,
-            thirteenth_month=thirteenth_month_2,
-            monthly_expenses=monthly_expenses_2,
-            start_age=start_age_2,
-            current_age=current_age_2,
-            annual_investment_premium=annual_investment_premium_2,
-            annual_interest_rate=annual_interest_rate_2,
-            milestones=milestones_2,
-            existing_oa=existing_oa_2,
-            existing_sa=existing_sa_2,
-            existing_ma=existing_ma_2,
-            existing_cash=existing_cash_2,
-            investment_start_age=investment_start_age_2
-        )
-        df_1_adjusted = pd.DataFrame(cpf_balance_1_adjusted)
-        df_2_adjusted = pd.DataFrame(cpf_balance_2_adjusted)
-        df_combined_adjusted = align_financial_data(df_1_adjusted, df_2_adjusted, start_age_1, start_age_2)
-
-        # Display Adjusted Results
-        st.write("\nAdjusted Financial Analysis:")
-        st.write(df_combined_adjusted.style.format({
-            "Cumulative Cash Savings": "${:,.2f}",
-            "Cumulative OA": "${:,.2f}",
-            "Cumulative SA": "${:,.2f}",
-            "Cumulative MA": "${:,.2f}",
-            "Cumulative Total CPF": "${:,.2f}",
-            "Cumulative Investment Premium": "${:,.2f}",
-            "Investment Value": "${:,.2f}",
-            "Net Worth": "${:,.2f}"
-        }))
-        # Plot Adjusted Net Worth
-        fig_adjusted = go.Figure()
-        fig_adjusted.add_trace(go.Scatter(x=df_combined_adjusted['Age'], y=df_combined_adjusted['Net Worth'],
-                                          mode='lines+markers', name="Adjusted Net Worth"))
-        fig_adjusted.update_layout(title="Adjusted Net Worth Over Time", xaxis_title='Age',
-                                   yaxis_title='Amount ($)', template='plotly_white')
-        st.plotly_chart(fig_adjusted)
-
-# End of Streamlit App
