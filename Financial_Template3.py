@@ -738,6 +738,9 @@ elif analysis_type == 'Couple':
             investment_value_combined = df_1['Investment Value'].iloc[-1] + df_2['Investment Value'].iloc[-1]
             net_worth_combined = df_combined['Net Worth'].iloc[-1]
 
+            total_years_worked_combined = int(
+                (current_age_1 - start_age_1) + (current_age_2 - start_age_2))  # Sum of years worked for both persons
+
             summary_data_combined = {
                 "Metric": [
                     "Total Years Worked",
