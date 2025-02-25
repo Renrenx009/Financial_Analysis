@@ -299,7 +299,7 @@ if analysis_type == 'Single':
     investment_start_age = st.number_input("Enter the start age for annual investment premium:", min_value=0, step=1,
                                            value=st.session_state.profile_data["person_1"]["investment_start_age"])
     annual_investment_premium = st.number_input("Enter your annual investment premium:", min_value=0.0, step=100.0,
-                                                 value=st.session_state.profile_data["person_1"]["annual_investment_premium"])
+                                                value=st.session_state.profile_data["person_1"]["annual_investment_premium"])
     annual_interest_rate = st.number_input("Enter the annual interest rate (as a percentage):", min_value=0.0, step=0.1,
                                            value=st.session_state.profile_data["person_1"]["annual_interest_rate"])
     existing_oa = st.number_input("Enter your existing OA balance at starting age:", min_value=0.0, step=100.0,
@@ -307,7 +307,7 @@ if analysis_type == 'Single':
     existing_sa = st.number_input("Enter your existing SA balance at starting age:", min_value=0.0, step=100.0,
                                   value=st.session_state.profile_data["person_1"]["existing_sa"])
     existing_ma = st.number_input("Enter your existing MA balance at starting age:", min_value=0.0, step=100.0,
-                                   value=st.session_state.profile_data["person_1"]["existing_ma"])
+                                  value=st.session_state.profile_data["person_1"]["existing_ma"])
     existing_cash = st.number_input("Enter your existing cash balance at starting age:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_1"]["existing_cash"])
     st.subheader("Financial Milestones")
@@ -400,8 +400,11 @@ if analysis_type == 'Single':
 
             # Format the summary table for display
             summary_df_display = summary_df.copy()
-            summary_df_display['Value'] = summary_df_display['Value'].apply(
-                lambda x: "${:,.2f}".format(x) if isinstance(x, (int, float)) else x)
+            summary_df_display['Value'] = summary_df_display.apply(
+                lambda row: f"{int(row['Value'])}" if row['Metric'] == "Total Years Worked" else (
+                    "${:,.2f}".format(row['Value']) if isinstance(row['Value'], (int, float)) else row['Value']
+                ), axis=1
+            )
 
             st.table(summary_df_display)
 
@@ -426,16 +429,16 @@ elif analysis_type == 'Couple':
     thirteenth_month_1 = st.number_input("Enter Person 1's 13th month salary:", min_value=0.0, step=100.0,
                                          value=st.session_state.profile_data["person_1"]["thirteenth_month"])
     monthly_expenses_1 = st.number_input("Enter Person 1's monthly expenses:", min_value=0.0, step=100.0,
-                                          value=st.session_state.profile_data["person_1"]["monthly_expenses"])
+                                         value=st.session_state.profile_data["person_1"]["monthly_expenses"])
     start_age_1 = st.number_input("Enter Person 1's starting age:", min_value=0, step=1,
-                                   value=st.session_state.profile_data["person_1"]["start_age"])
+                                  value=st.session_state.profile_data["person_1"]["start_age"])
     current_age_1 = st.number_input("Enter Person 1's current age:", min_value=0, step=1,
-                                     value=st.session_state.profile_data["person_1"]["current_age"])
+                                    value=st.session_state.profile_data["person_1"]["current_age"])
     investment_start_age_1 = st.number_input("Enter Person 1's start age for annual investment premium:", min_value=0,
                                              step=1,
                                              value=st.session_state.profile_data["person_1"]["investment_start_age"])
     annual_investment_premium_1 = st.number_input("Enter Person 1's annual investment premium:", min_value=0.0,
-                                                   step=100.0,
+                                                  step=100.0,
                                                   value=st.session_state.profile_data["person_1"][
                                                       "annual_investment_premium"])
     annual_interest_rate_1 = st.number_input("Enter Person 1's annual interest rate (as a percentage):",
@@ -446,7 +449,7 @@ elif analysis_type == 'Couple':
     existing_sa_1 = st.number_input("Enter Person 1's existing SA balance at starting age:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_1"]["existing_sa"])
     existing_ma_1 = st.number_input("Enter Person 1's existing MA balance at starting age:", min_value=0.0, step=100.0,
-                                     value=st.session_state.profile_data["person_1"]["existing_ma"])
+                                    value=st.session_state.profile_data["person_1"]["existing_ma"])
     existing_cash_1 = st.number_input("Enter Person 1's existing cash balance at starting age:", min_value=0.0, step=100.0,
                                       value=st.session_state.profile_data["person_1"]["existing_cash"])
     st.subheader("Financial Milestones for Person 1")
@@ -470,16 +473,16 @@ elif analysis_type == 'Couple':
     thirteenth_month_2 = st.number_input("Enter Person 2's 13th month salary:", min_value=0.0, step=100.0,
                                          value=st.session_state.profile_data["person_2"]["thirteenth_month"])
     monthly_expenses_2 = st.number_input("Enter Person 2's monthly expenses:", min_value=0.0, step=100.0,
-                                          value=st.session_state.profile_data["person_2"]["monthly_expenses"])
+                                         value=st.session_state.profile_data["person_2"]["monthly_expenses"])
     start_age_2 = st.number_input("Enter Person 2's starting age:", min_value=0, step=1,
-                                   value=st.session_state.profile_data["person_2"]["start_age"])
+                                  value=st.session_state.profile_data["person_2"]["start_age"])
     current_age_2 = st.number_input("Enter Person 2's current age:", min_value=0, step=1,
-                                     value=st.session_state.profile_data["person_2"]["current_age"])
+                                    value=st.session_state.profile_data["person_2"]["current_age"])
     investment_start_age_2 = st.number_input("Enter Person 2's start age for annual investment premium:", min_value=0,
                                              step=1,
                                              value=st.session_state.profile_data["person_2"]["investment_start_age"])
     annual_investment_premium_2 = st.number_input("Enter Person 2's annual investment premium:", min_value=0.0,
-                                                   step=100.0,
+                                                  step=100.0,
                                                   value=st.session_state.profile_data["person_2"][
                                                       "annual_investment_premium"])
     annual_interest_rate_2 = st.number_input("Enter Person 2's annual interest rate (as a percentage):",
@@ -490,7 +493,7 @@ elif analysis_type == 'Couple':
     existing_sa_2 = st.number_input("Enter Person 2's existing SA balance at starting age:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_2"]["existing_sa"])
     existing_ma_2 = st.number_input("Enter Person 2's existing MA balance at starting age:", min_value=0.0, step=100.0,
-                                     value=st.session_state.profile_data["person_2"]["existing_ma"])
+                                    value=st.session_state.profile_data["person_2"]["existing_ma"])
     existing_cash_2 = st.number_input("Enter Person 2's existing cash balance at starting age:", min_value=0.0, step=100.0,
                                       value=st.session_state.profile_data["person_2"]["existing_cash"])
     st.subheader("Financial Milestones for Person 2")
@@ -661,15 +664,17 @@ elif analysis_type == 'Couple':
 
             # Format the summary table for display
             summary_df_1_display = summary_df_1.copy()
-            summary_df_1_display['Value'] = summary_df_1_display['Value'].apply(
-                lambda x: "${:,.2f}".format(x) if isinstance(x, (int, float)) else x
+            summary_df_1_display['Value'] = summary_df_1_display.apply(
+                lambda row: f"{int(row['Value'])}" if row['Metric'] == "Total Years Worked" else (
+                    "${:,.2f}".format(row['Value']) if isinstance(row['Value'], (int, float)) else row['Value']
+                ), axis=1
             )
             st.table(summary_df_1_display)
 
             # Plot Net Worth for Person 1
             fig_person_1 = go.Figure()
             fig_person_1.add_trace(
-                go.Scatter(x=df_1['Year'], y=df_1['Net Worth'], mode='lines+markers', name=f"{name_1}'s Net Worth")
+                go.Scatter(x=df_1['Age'], y=df_1['Net Worth'], mode='lines+markers', name=f"{name_1}'s Net Worth")
             )
             fig_person_1.update_layout(
                 title=f"{name_1}'s Net Worth Over Time", xaxis_title='Year',
@@ -715,17 +720,19 @@ elif analysis_type == 'Couple':
             }
             summary_df_2 = pd.DataFrame(summary_data_2)
 
-            # Format the summary table for display
+            # Format the summary table for display person 2
             summary_df_2_display = summary_df_2.copy()
-            summary_df_2_display['Value'] = summary_df_2_display['Value'].apply(
-                lambda x: "${:,.2f}".format(x) if isinstance(x, (int, float)) else x
+            summary_df_2_display['Value'] = summary_df_2_display.apply(
+                lambda row: f"{int(row['Value'])}" if row['Metric'] == "Total Years Worked" else (
+                    "${:,.2f}".format(row['Value']) if isinstance(row['Value'], (int, float)) else row['Value']
+                ), axis=1
             )
             st.table(summary_df_2_display)
 
             # Plot Net Worth for Person 2
             fig_person_2 = go.Figure()
             fig_person_2.add_trace(
-                go.Scatter(x=df_2['Year'], y=df_2['Net Worth'], mode='lines+markers', name=f"{name_2}'s Net Worth")
+                go.Scatter(x=df_2['Age'], y=df_2['Net Worth'], mode='lines+markers', name=f"{name_2}'s Net Worth")
             )
             fig_person_2.update_layout(
                 title=f"{name_2}'s Net Worth Over Time", xaxis_title='Year',
@@ -791,10 +798,12 @@ elif analysis_type == 'Couple':
             }
             summary_df_combined = pd.DataFrame(summary_data_combined)
 
-            # Format the summary table for display
+            # Format the summary table for display for couple
             summary_df_combined_display = summary_df_combined.copy()
-            summary_df_combined_display['Value'] = summary_df_combined_display['Value'].apply(
-                lambda x: "${:,.2f}".format(x) if isinstance(x, (int, float)) else x
+            summary_df_combined_display['Value'] = summary_df_combined_display.apply(
+                lambda row: f"{int(row['Value'])}" if row['Metric'] == "Total Years Worked" else (
+                    "${:,.2f}".format(row['Value']) if isinstance(row['Value'], (int, float)) else row['Value']
+                ), axis=1
             )
             st.table(summary_df_combined_display)
 
