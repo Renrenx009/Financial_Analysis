@@ -281,6 +281,10 @@ if analysis_type == "Couple" and "person_2" not in st.session_state.profile_data
     }
 
 if analysis_type == 'Single':
+
+    # Current Year Input
+    current_year = st.number_input("Enter the current year:", min_value=1900, step=1, value=2025)
+
     # Single person inputs
     st.subheader("Person 1")
     name_1 = st.text_input("Enter the name of Person 1:", value=st.session_state.profile_data["person_1"]["name"])
@@ -292,7 +296,7 @@ if analysis_type == 'Single':
                                        value=st.session_state.profile_data["person_1"]["thirteenth_month"])
     monthly_expenses = st.number_input("Enter your monthly expenses:", min_value=0.0, step=100.0,
                                        value=st.session_state.profile_data["person_1"]["monthly_expenses"])
-    start_age = st.number_input("Enter your starting age:", min_value=0, step=1,
+    start_age = st.number_input("Enter your age when you first started working full time:", min_value=0, step=1,
                                 value=st.session_state.profile_data["person_1"]["start_age"])
     current_age = st.number_input("Enter your current age:", min_value=0, step=1,
                                   value=st.session_state.profile_data["person_1"]["current_age"])
@@ -300,15 +304,15 @@ if analysis_type == 'Single':
                                            value=st.session_state.profile_data["person_1"]["investment_start_age"])
     annual_investment_premium = st.number_input("Enter your annual investment premium:", min_value=0.0, step=100.0,
                                                 value=st.session_state.profile_data["person_1"]["annual_investment_premium"])
-    annual_interest_rate = st.number_input("Enter the annual interest rate (as a percentage):", min_value=0.0, step=0.1,
+    annual_interest_rate = st.number_input("Enter the annual investment interest rate (as a percentage):", min_value=0.0, step=0.1,
                                            value=st.session_state.profile_data["person_1"]["annual_interest_rate"])
-    existing_oa = st.number_input("Enter your existing OA balance at starting age:", min_value=0.0, step=100.0,
+    existing_oa = st.number_input("Enter your OA balance before when you start working full time:", min_value=0.0, step=100.0,
                                   value=st.session_state.profile_data["person_1"]["existing_oa"])
-    existing_sa = st.number_input("Enter your existing SA balance at starting age:", min_value=0.0, step=100.0,
+    existing_sa = st.number_input("Enter your SA balance before when you start working full time:", min_value=0.0, step=100.0,
                                   value=st.session_state.profile_data["person_1"]["existing_sa"])
-    existing_ma = st.number_input("Enter your existing MA balance at starting age:", min_value=0.0, step=100.0,
+    existing_ma = st.number_input("Enter your MA balance before when you start working full time:", min_value=0.0, step=100.0,
                                   value=st.session_state.profile_data["person_1"]["existing_ma"])
-    existing_cash = st.number_input("Enter your existing cash balance at starting age:", min_value=0.0, step=100.0,
+    existing_cash = st.number_input("Enter your cash balance before when you start working full time:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_1"]["existing_cash"])
     st.subheader("Financial Milestones")
     num_milestones = st.number_input("Enter the number of financial milestones:", min_value=0, step=1)
@@ -346,6 +350,9 @@ if analysis_type == 'Single':
                                             existing_ma=existing_ma, existing_cash=existing_cash,
                                             investment_start_age=investment_start_age)
         df = pd.DataFrame(cpf_balance)
+
+        # Add Year column based on current year
+        df['Year'] = df['Age'].apply(lambda age: current_year - (current_age - age))
 
         # Format DataFrame for better readability
         df_formatted = df.style.format({
@@ -422,41 +429,41 @@ elif analysis_type == 'Couple':
     # Person 1 inputs
     st.subheader("Person 1")
     name_1 = st.text_input("Enter the name of Person 1:", value=st.session_state.profile_data["person_1"]["name"])
-    salary_1 = st.number_input("Enter Person 1's monthly gross income:", min_value=0.0, step=100.0,
+    salary_1 = st.number_input(f"Enter {name_1}'s monthly gross income:", min_value=0.0, step=100.0,
                                value=st.session_state.profile_data["person_1"]["salary"])
-    bonus_1 = st.number_input("Enter Person 1's annual bonus:", min_value=0.0, step=100.0,
+    bonus_1 = st.number_input(f"Enter {name_1}'s annual bonus:", min_value=0.0, step=100.0,
                               value=st.session_state.profile_data["person_1"]["bonus"])
-    thirteenth_month_1 = st.number_input("Enter Person 1's 13th month salary:", min_value=0.0, step=100.0,
+    thirteenth_month_1 = st.number_input(f"Enter {name_1}'s 13th month salary:", min_value=0.0, step=100.0,
                                          value=st.session_state.profile_data["person_1"]["thirteenth_month"])
-    monthly_expenses_1 = st.number_input("Enter Person 1's monthly expenses:", min_value=0.0, step=100.0,
+    monthly_expenses_1 = st.number_input(f"Enter {name_1}'s monthly expenses:", min_value=0.0, step=100.0,
                                          value=st.session_state.profile_data["person_1"]["monthly_expenses"])
-    start_age_1 = st.number_input("Enter Person 1's starting age:", min_value=0, step=1,
+    start_age_1 = st.number_input(f"Enter {name_1}'s when you first started working full time:", min_value=0, step=1,
                                   value=st.session_state.profile_data["person_1"]["start_age"])
-    current_age_1 = st.number_input("Enter Person 1's current age:", min_value=0, step=1,
+    current_age_1 = st.number_input(f"Enter {name_1}'s current age:", min_value=0, step=1,
                                     value=st.session_state.profile_data["person_1"]["current_age"])
-    investment_start_age_1 = st.number_input("Enter Person 1's start age for annual investment premium:", min_value=0,
+    investment_start_age_1 = st.number_input(f"Enter {name_1}'s start age for annual investment premium:", min_value=0,
                                              step=1,
                                              value=st.session_state.profile_data["person_1"]["investment_start_age"])
-    annual_investment_premium_1 = st.number_input("Enter Person 1's annual investment premium:", min_value=0.0,
+    annual_investment_premium_1 = st.number_input(f"Enter {name_1}'s annual investment premium:", min_value=0.0,
                                                   step=100.0,
                                                   value=st.session_state.profile_data["person_1"][
                                                       "annual_investment_premium"])
-    annual_interest_rate_1 = st.number_input("Enter Person 1's annual interest rate (as a percentage):",
+    annual_interest_rate_1 = st.number_input(f"Enter {name_1}'s annual investment interest rate (as a percentage):",
                                              min_value=0.0, step=0.1,
                                              value=st.session_state.profile_data["person_1"]["annual_interest_rate"])
-    existing_oa_1 = st.number_input("Enter Person 1's existing OA balance at starting age:", min_value=0.0, step=100.0,
+    existing_oa_1 = st.number_input(f"Enter {name_1}'s OA balance before you start working full time:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_1"]["existing_oa"])
-    existing_sa_1 = st.number_input("Enter Person 1's existing SA balance at starting age:", min_value=0.0, step=100.0,
+    existing_sa_1 = st.number_input(f"Enter {name_1}'s SA balance before you start working full time:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_1"]["existing_sa"])
-    existing_ma_1 = st.number_input("Enter Person 1's existing MA balance at starting age:", min_value=0.0, step=100.0,
+    existing_ma_1 = st.number_input(f"Enter {name_1}'s MA balance before you start working full time:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_1"]["existing_ma"])
-    existing_cash_1 = st.number_input("Enter Person 1's existing cash balance at starting age:", min_value=0.0, step=100.0,
+    existing_cash_1 = st.number_input(f"Enter {name_1}'s cash balance before you start working full time:", min_value=0.0, step=100.0,
                                       value=st.session_state.profile_data["person_1"]["existing_cash"])
-    st.subheader("Financial Milestones for Person 1")
-    num_milestones_1 = st.number_input("Enter the number of financial milestones for Person 1:", min_value=0, step=1)
+    st.subheader(f"Financial Milestones for {name_1}")
+    num_milestones_1 = st.number_input(f"Enter the number of financial milestones for {name_1}:", min_value=0, step=1)
     milestones_1 = {}
     for i in range(num_milestones_1):
-        age = st.number_input(f"Enter the age for milestone {i + 1} (Person 1's age):", min_value=0, step=1,
+        age = st.number_input(f"Enter the age for milestone {i + 1} ({name_1}'s age):", min_value=0, step=1,
                               key=f"age_1_{i}")
         amount = st.number_input(
             f"Enter the amount for milestone {i + 1} (negative for expenses, positive for gains):", step=100.0,
@@ -466,41 +473,41 @@ elif analysis_type == 'Couple':
     # Person 2 inputs
     st.subheader("Person 2")
     name_2 = st.text_input("Enter the name of Person 2:", value=st.session_state.profile_data["person_2"]["name"])
-    salary_2 = st.number_input("Enter Person 2's monthly gross income:", min_value=0.0, step=100.0,
+    salary_2 = st.number_input(f"Enter {name_2}'s monthly gross income:", min_value=0.0, step=100.0,
                                value=st.session_state.profile_data["person_2"]["salary"])
-    bonus_2 = st.number_input("Enter Person 2's annual bonus:", min_value=0.0, step=100.0,
+    bonus_2 = st.number_input(f"Enter {name_2}'s annual bonus:", min_value=0.0, step=100.0,
                               value=st.session_state.profile_data["person_2"]["bonus"])
-    thirteenth_month_2 = st.number_input("Enter Person 2's 13th month salary:", min_value=0.0, step=100.0,
+    thirteenth_month_2 = st.number_input(f"Enter {name_2}'s 13th month salary:", min_value=0.0, step=100.0,
                                          value=st.session_state.profile_data["person_2"]["thirteenth_month"])
-    monthly_expenses_2 = st.number_input("Enter Person 2's monthly expenses:", min_value=0.0, step=100.0,
+    monthly_expenses_2 = st.number_input(f"Enter {name_2}'s monthly expenses:", min_value=0.0, step=100.0,
                                          value=st.session_state.profile_data["person_2"]["monthly_expenses"])
-    start_age_2 = st.number_input("Enter Person 2's starting age:", min_value=0, step=1,
+    start_age_2 = st.number_input(f"Enter {name_2}'s age when you first started working full time:", min_value=0, step=1,
                                   value=st.session_state.profile_data["person_2"]["start_age"])
-    current_age_2 = st.number_input("Enter Person 2's current age:", min_value=0, step=1,
+    current_age_2 = st.number_input(f"Enter {name_2}'s current age:", min_value=0, step=1,
                                     value=st.session_state.profile_data["person_2"]["current_age"])
-    investment_start_age_2 = st.number_input("Enter Person 2's start age for annual investment premium:", min_value=0,
+    investment_start_age_2 = st.number_input(f"Enter {name_2}'s start age for annual investment premium:", min_value=0,
                                              step=1,
                                              value=st.session_state.profile_data["person_2"]["investment_start_age"])
-    annual_investment_premium_2 = st.number_input("Enter Person 2's annual investment premium:", min_value=0.0,
+    annual_investment_premium_2 = st.number_input(f"Enter {name_2}'s annual investment premium:", min_value=0.0,
                                                   step=100.0,
                                                   value=st.session_state.profile_data["person_2"][
                                                       "annual_investment_premium"])
-    annual_interest_rate_2 = st.number_input("Enter Person 2's annual interest rate (as a percentage):",
+    annual_interest_rate_2 = st.number_input(f"Enter {name_2}'s annual investment interest rate (as a percentage):",
                                              min_value=0.0, step=0.1,
                                              value=st.session_state.profile_data["person_2"]["annual_interest_rate"])
-    existing_oa_2 = st.number_input("Enter Person 2's existing OA balance at starting age:", min_value=0.0, step=100.0,
+    existing_oa_2 = st.number_input(f"Enter {name_2}'s OA balance before you start working full time:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_2"]["existing_oa"])
-    existing_sa_2 = st.number_input("Enter Person 2's existing SA balance at starting age:", min_value=0.0, step=100.0,
+    existing_sa_2 = st.number_input(f"Enter {name_2}'s SA balance before you start working full time:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_2"]["existing_sa"])
-    existing_ma_2 = st.number_input("Enter Person 2's existing MA balance at starting age:", min_value=0.0, step=100.0,
+    existing_ma_2 = st.number_input(f"Enter {name_2}'s MA balance before you start working full time:", min_value=0.0, step=100.0,
                                     value=st.session_state.profile_data["person_2"]["existing_ma"])
-    existing_cash_2 = st.number_input("Enter Person 2's existing cash balance at starting age:", min_value=0.0, step=100.0,
+    existing_cash_2 = st.number_input(f"Enter {name_2}'s cash balance before you start working full time:", min_value=0.0, step=100.0,
                                       value=st.session_state.profile_data["person_2"]["existing_cash"])
-    st.subheader("Financial Milestones for Person 2")
-    num_milestones_2 = st.number_input("Enter the number of financial milestones for Person 2:", min_value=0, step=1)
+    st.subheader(f"Financial Milestones for {name_2}")
+    num_milestones_2 = st.number_input(f"Enter the number of financial milestones for {name_2}'s:", min_value=0, step=1)
     milestones_2 = {}
     for i in range(num_milestones_2):
-        age = st.number_input(f"Enter the age for milestone {i + 1} (Person 2's age):", min_value=0, step=1,
+        age = st.number_input(f"Enter the age for milestone {i + 1} ({name_2}'s age):", min_value=0, step=1,
                               key=f"age_2_{i}")
         amount = st.number_input(
             f"Enter the amount for milestone {i + 1} (negative for expenses, positive for gains):", step=100.0,
