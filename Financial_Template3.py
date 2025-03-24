@@ -149,7 +149,7 @@ def calculate_cpf_balance(salary, bonus, thirteenth_month, monthly_expenses, sta
         cumulative_sa += cpf_contribution * sa_rate
         cumulative_ma += cpf_contribution * ma_rate
         cumulative_total_cpf = cumulative_oa + cumulative_sa + cumulative_ma
-        net_worth = cumulative_cash_savings + cumulative_oa + cumulative_sa + investment_value
+        net_worth = cumulative_cash_savings + cumulative_oa + cumulative_sa + cumulative_ma + investment_value
         # Apply financial milestones
         if age in milestones:
             net_worth += milestones[age] * milestone_percentage
